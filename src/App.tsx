@@ -30,6 +30,7 @@ import Disassembler from "@/pages/Disassembler";
 import Breakpoints from "@/pages/Breakpoints";
 import Registradores from "@/pages/Registradores";
 
+import Assembly from "@/pages/Assembly";
 import AutoAssemble from "@/pages/AutoAssemble";
 import Injecao from "@/pages/Injecao";
 import Templates from "@/pages/Templates";
@@ -85,6 +86,7 @@ function AppLayout() {
             <Route path="/breakpoints" component={Breakpoints} />
             <Route path="/registradores" component={Registradores} />
 
+            <Route path="/assembly" component={Assembly} />
             <Route path="/auto-assemble" component={AutoAssemble} />
             <Route path="/injecao" component={Injecao} />
             <Route path="/templates" component={Templates} />

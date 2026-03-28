@@ -71,6 +71,7 @@ const sections: NavSection[] = [
     label: "Code Injection",
     icon: <Code2 className="w-4 h-4" />,
     items: [
+      { label: "Fundamentos de Assembly", path: "/assembly" },
       { label: "Auto-Assemble", path: "/auto-assemble" },
       { label: "Injeção de Código", path: "/injecao" },
       { label: "Templates CE", path: "/templates" },
@@ -207,7 +208,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
       <div className="px-4 py-3 border-t border-sidebar-border">
         <p className="text-xs text-muted-foreground text-center">
-          30 tópicos • Português Brasileiro
+          31 tópicos • Português Brasileiro
         </p>
       </div>
     </div>
