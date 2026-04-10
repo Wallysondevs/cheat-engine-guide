@@ -1,113 +1,114 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
-import { CodeBlock } from "@/components/ui/CodeBlock";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function Lua() {
-  return (
-    <PageContainer
-      title="Introdução ao Lua no Cheat Engine"
-      subtitle="Use a linguagem Lua para automatizar e estender as capacidades do Cheat Engine."
-      difficulty="intermediário"
-      timeToRead="10 min"
-    >
-      <AlertBox type="info" title="Por que Lua?">
-        O Cheat Engine usa Lua como sua linguagem de scripting. Com Lua você pode criar cheats muito mais sofisticados que os possíveis com apenas varredura e injeção simples: timers, interfaces gráficas, lógica condicional e muito mais.
-      </AlertBox>
+  export default function Lua() {
+    return (
+      <PageContainer
+        title="Lua no Cheat Engine"
+        subtitle="Use a linguagem Lua para automatizar cheats, criar interfaces e controlar o CE programaticamente."
+        difficulty="intermediário"
+        timeToRead="14 min"
+      >
+        <p>
+          O Cheat Engine possui um motor Lua integrado que expõe quase toda a sua funcionalidade via API de script. Com Lua você pode ler/escrever memória, criar interfaces gráficas, gerenciar hotkeys e muito mais.
+        </p>
 
-      <h2>Acessando o Console Lua</h2>
-      <ul>
-        <li>Vá em <strong>View → Lua Engine</strong></li>
-        <li>Ou <strong>Tools → Lua Engine</strong></li>
-        <li>Atalho: <code>Alt+L</code> (dependendo da versão)</li>
-      </ul>
+        <h2>Acessando o Console Lua</h2>
+        <CodeBlock
+          title="Como abrir o Lua Engine"
+          language="text"
+          code={`Menu: Lua → Lua Engine (ou Ctrl+Alt+L)
+  Ou: Tools → Lua Engine
 
-      <h2>Básico do Lua</h2>
-      <CodeBlock
-        title="Sintaxe Básica Lua"
-        language="lua"
-        code={`
--- Comentário em Lua
+  O console tem:
+  - Editor de código (parte superior)
+  - Console de output (parte inferior)  
+  - Botão Execute (Ctrl+Enter) para rodar o código
+  - Botão Clear para limpar o output`}
+        />
 
--- Variáveis
-local nome = "Jogador"
-local vida = 100
-local ativo = true
+        <h2>Operações de Memória com Lua</h2>
+        <CodeBlock
+          title="Lendo e escrevendo na memória"
+          language="lua"
+          code={`-- Leitura de diferentes tipos
+  local valorInt    = readInteger("game.exe+0x12345")
+  local valorFloat  = readFloat("game.exe+0x67890")
+  local valorDouble = readDouble("game.exe+0xABCDE")
+  local valorByte   = readBytes("game.exe+0x11111", 1)[1]
+  local texto       = readString("game.exe+0x22222", 20)
 
--- Condicionais
-if vida <= 0 then
-  print("Morreu!")
-elseif vida < 20 then
-  print("Vida crítica!")
-else
-  print("Vida ok: " .. vida)
-end
+  -- Escrita de diferentes tipos
+  writeInteger("game.exe+0x12345", 9999)
+  writeFloat("game.exe+0x67890", 100.0)
+  writeDouble("game.exe+0xABCDE", 999.99)
+  writeBytes("game.exe+0x11111", 0xFF, 0x00, 0x4E)
+  writeString("game.exe+0x22222", "Hero")
 
--- Loops
-for i = 1, 10 do
-  print(i)
-end
+  -- Com ponteiro (desreferenciamento)
+  local base = readInteger("game.exe+0xPOINTER")
+  writeInteger(base + 0x4C, 9999)  -- vida`}
+        />
 
--- Funções
-local function curar(quantidade)
-  vida = vida + quantidade
-  return vida
-end
+        <h2>API de Controle do CE</h2>
+        <CodeBlock
+          title="Controlando elementos da interface do CE"
+          language="lua"
+          code={`-- Obter o processo anexado
+  local processo = getOpenedProcessID()
+  print("PID: " .. processo)
 
-print(curar(50))  -- 150
-        `}
-      />
+  -- Trabalhar com a Address List
+  local al = getAddressList()
+  local count = al.Count
+  print("Endereços na lista: " .. count)
 
-      <h2>Interagindo com a Memória</h2>
-      <CodeBlock
-        title="Leitura e Escrita de Memória"
-        language="lua"
-        code={`
--- Ler um valor de 4 bytes (inteiro)
-local endereco = 0x1A2B3C4D
-local valor = readInteger(endereco)
-print("Vida atual: " .. valor)
+  -- Acessar um Memory Record pelo nome
+  local mr = al.getMemoryRecordByDescription("Vida")
+  if mr then
+    print("Valor atual: " .. mr.Value)
+    mr.Value = "9999"  -- modificar
+    mr.Active = true   -- ativar freeze
+  end
 
--- Escrever um valor de 4 bytes
-writeInteger(endereco, 9999)
+  -- Criar um novo Memory Record via Lua
+  local novoMR = al.createMemoryRecord()
+  novoMR.Description = "Meu Cheat"
+  novoMR.Address = "game.exe+0x12345"
+  novoMR.Type = vtDword  -- 4 Bytes
+  novoMR.Value = "9999"`}
+        />
 
--- Ler float
-local velocidade = readFloat(0x2B3C4D5E)
-print("Velocidade: " .. velocidade)
+        <h2>Timers e Automação</h2>
+        <CodeBlock
+          title="Executar código periodicamente"
+          language="lua"
+          code={`-- Criar um timer que executa a cada 1 segundo
+  local meuTimer = createTimer(nil, false)
+  meuTimer.Interval = 1000  -- 1000ms = 1 segundo
+  meuTimer.OnTimer = function()
+    -- Código executado a cada 1 segundo
+    local vida = readInteger("game.exe+0x12345")
+    if vida < 50 then
+      writeInteger("game.exe+0x12345", 9999)
+      print("Vida restaurada!")
+    end
+  end
+  meuTimer.Enabled = true
 
--- Escrever float
-writeFloat(0x2B3C4D5E, 999.0)
+  -- Para parar o timer:
+  -- meuTimer.Enabled = false`}
+        />
 
--- Ler string
-local nome = readString(0x3C4D5E6F, 32)  -- 32 bytes
-print("Nome: " .. nome)
-        `}
-      />
+        <AlertBox type="tip" title="Dica — Print para Debug">
+          Use <code>print("valor: " .. tostring(valor))</code> liberalmente enquanto desenvolve scripts. A saída aparece no console do Lua Engine e ajuda a entender o que está acontecendo na memória.
+        </AlertBox>
 
-      <h2>Usando o Cheat Engine com Lua</h2>
-      <CodeBlock
-        title="Interagir com a Address List"
-        language="lua"
-        code={`
--- Obter uma entrada da lista de endereços pelo nome
-local entrada = getAddressList().getMemoryRecordByDescription("Vida")
-if entrada then
-  entrada.Value = "9999"       -- Modificar o valor
-  entrada.Active = true        -- Ativar freeze
-  print("Vida modificada!")
-end
-
--- Criar novo endereço na lista
-local novo = createMemoryRecord()
-novo.Description = "Velocidade"
-novo.Address = "1A2B3C4D"
-novo.Type = vtFloat
-novo.Value = "999.0"
-        `}
-      />
-
-      <AlertBox type="tip" title="Executar Script">
-        No Lua Engine, você pode digitar código e executar com <strong>Execute</strong> ou usar a aba de scripts para salvar e reusar. Erros aparecem em vermelho no console.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <AlertBox type="info" title="Lua 5.3 no Cheat Engine">
+          O CE usa Lua 5.3. A maioria das bibliotecas padrão do Lua está disponível (math, string, table, io). A biblioteca CE-específica é extensa — consulte a documentação da Lua API do CE para ver todas as funções disponíveis.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
