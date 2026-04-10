@@ -1,115 +1,135 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
-import { CodeBlock } from "@/components/ui/CodeBlock";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function Injecao() {
-  return (
-    <PageContainer
-      title="Injeção de Código"
-      subtitle="Técnicas avançadas de code injection para modificar o comportamento de jogos."
-      difficulty="avançado"
-      timeToRead="12 min"
-    >
-      <h2>O que é Code Injection?</h2>
-      <p>
-        Code injection é a técnica de inserir código próprio no fluxo de execução de um programa. No contexto de jogos, isso permite modificar comportamentos sem precisar encontrar endereços de memória específicos — você modifica o próprio código do jogo.
-      </p>
+  export default function Injecao() {
+    return (
+      <PageContainer
+        title="Injeção de Código"
+        subtitle="Como modificar o comportamento de um jogo injetando instruções Assembly diretamente na memória."
+        difficulty="avançado"
+        timeToRead="16 min"
+      >
+        <p>
+          A injeção de código é a técnica mais poderosa do Cheat Engine: em vez de apenas modificar valores, você <strong>modifica o comportamento</strong> do jogo — mudando as instruções que ele executa. É a diferença entre "defina vida = 9999" e "faça o jogo nunca diminuir a vida".
+        </p>
 
-      <h2>Técnica: Jump Patch</h2>
-      <p>
-        A técnica mais comum: substituir uma instrução existente por um <code>jmp</code> para sua cave de código.
-      </p>
-      <CodeBlock
-        title="Jump Patch Básico"
-        language="asm"
-        code={`
-; Instrução original em 0x00A1B230:
-; sub [esi+4C], eax   (3 bytes)
-; cmp [esi+4C], 0     (3 bytes) = 6 bytes total
+        <h2>Como Funciona a Injeção de Código</h2>
+        <p>
+          A técnica clássica é chamada de <strong>Code Cave</strong> ou <strong>Detour</strong>:
+        </p>
+        <div className="not-prose grid grid-cols-1 gap-3 my-4">
+          {[
+            { n: "1", passo: "Encontre a instrução alvo", desc: "Use What Writes para identificar a instrução Assembly que modifica o valor (ex: SUB [EBX+4C], EAX diminui a vida)." },
+            { n: "2", passo: "Aloque nova memória", desc: "Use alloc() no Auto Assembler para reservar espaço para seu novo código." },
+            { n: "3", passo: "Escreva seu código", desc: "Seu código substitui ou estende a instrução original — pode ignorar, modificar valores ou adicionar lógica." },
+            { n: "4", passo: "Instale o hook (JMP)", desc: "Substitua a instrução original por um JMP para seu código (5 bytes). Bytes restantes viram NOP." },
+            { n: "5", passo: "Retorne ao fluxo original", desc: "Ao final do seu código, pule de volta para a instrução seguinte ao hook." },
+          ].map((item) => (
+            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
+              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
+              <div>
+                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-; Substituímos por:
-; jmp minhaCave        (5 bytes)
-; nop                  (1 byte) = 6 bytes total
+        <h2>Exemplo: Ignorar Dano no Jogador</h2>
+        <CodeBlock
+          title="Code Injection completa — godmode"
+          language="asm"
+          code={`// Situação: identificamos que EBX+0x4C é a vida do jogador
+  // A instrução que a reduz é: SUB [EBX+4C], EAX
 
-; Na cave:
-minhaCave:
-  pushad              ; salvar todos registradores
-  ; ... seu código aqui ...
-  popad               ; restaurar registradores
-  sub [esi+4C], eax   ; instrução original
-  cmp [esi+4C], 0     ; instrução original
-  jmp 00A1B236        ; retornar ao código original
-        `}
-      />
+  [ENABLE]
+  aobscanmodule(INJPOINT, game.exe, 2B 83 4C 00 00 00)
+  alloc(godmem, 256, INJPOINT)
 
-      <h2>Godmode — Exemplo Completo</h2>
-      <CodeBlock
-        title="Godmode (sem dano)"
-        language="asm"
-        code={`
-[ENABLE]
-alloc(godmode, 128)
-label(retorno)
+  label(codigo)
+  label(retorno)
+  label(original)
 
-// Endereço onde a instrução de dano está
-// Instrução: sub [esi+4C], eax
-00A1B230:
-  jmp godmode
-  nop
+  godmem:
+  codigo:
+    // Verificar se é o jogador antes de ignorar o dano
+    // EBX aponta para a struct do personagem
+    // Se for inimigo, aplicar o dano normalmente
+    
+    // Simplesmente pular a instrução — nenhum dano
+    // Para ignorar o dano apenas do jogador, adicione comparação aqui
+    
+    jmp retorno
 
-godmode:
-  // Não executa o sub — ignorar o dano
-  // Restaurar vida para máximo se necessário
-  mov dword ptr [esi+4C], #100
-  jmp retorno
+  INJPOINT:
+    jmp godmem  // 5 bytes — sobrescreve os 6 bytes originais
+    nop         // 1 byte extra para completar
+  retorno:
+  registersymbol(INJPOINT)
 
-retorno:
+  [DISABLE]
+  INJPOINT:
+    db 2B 83 4C 00 00 00  // restaura: SUB [EBX+0x4C], EAX
+  unregistersymbol(INJPOINT)
+  dealloc(godmem)`}
+        />
 
-[DISABLE]
-00A1B230:
-  sub [esi+4C], eax
-  nop
-dealloc(godmode)
-        `}
-      />
+        <h2>Exemplo: Modificar Dano Causado</h2>
+        <CodeBlock
+          title="Multiplicar o dano causado por 10x"
+          language="asm"
+          code={`[ENABLE]
+  aobscanmodule(DANO_INJPOINT, game.exe, 29 83 50 00 00 00)
+  alloc(danomem, 256, DANO_INJPOINT)
 
-      <h2>Infinite Ammo — Exemplo</h2>
-      <CodeBlock
-        title="Munição Infinita"
-        language="asm"
-        code={`
-[ENABLE]
-alloc(infAmmo, 64)
-label(retorno)
+  label(danoreturn)
 
-// Instrução que subtrai munição:
-// dec [edi+1C]  (quando atirar)
-00B2C340:
-  jmp infAmmo
-  nop
-  nop
-  nop
+  danomem:
+    // EAX contém o dano a ser aplicado
+    // Multiplicamos por 10 antes de aplicar
+    imul eax, eax, 0A       // EAX = EAX * 10
+    sub [ebx+00000050], eax // aplica o dano multiplicado
+    jmp danoreturn
 
-infAmmo:
-  // Não decrementa — ignora o sub de munição
-  // dec [edi+1C]  (removida)
-  jmp retorno
+  DANO_INJPOINT:
+    jmp danomem
+    nop
+  danoreturn:
+  registersymbol(DANO_INJPOINT)
 
-retorno:
+  [DISABLE]
+  DANO_INJPOINT:
+    db 29 83 50 00 00 00
+  unregistersymbol(DANO_INJPOINT)
+  dealloc(danomem)`}
+        />
 
-[DISABLE]
-00B2C340:
-  dec [edi+1C]
-  nop
-  nop
-  nop
-dealloc(infAmmo)
-        `}
-      />
+        <h2>Preservando Registradores</h2>
+        <AlertBox type="warning" title="Sempre preserve os registradores!">
+          Ao injetar código, você interrompe o fluxo do jogo. Se modificar registradores sem restaurá-los, você corrompe o estado do jogo e ele pode travar. Use PUSHAD/POPAD (x86) ou salve manualmente cada registrador que modificar.
+        </AlertBox>
 
-      <AlertBox type="warning" title="Tamanho das Instruções">
-        Um <code>jmp</code> (salto relativo) ocupa 5 bytes. A instrução que você está substituindo deve ter pelo menos 5 bytes, ou você precisa incluir a próxima instrução também (e recolocá-la na cave). Use o disassembler para verificar os tamanhos.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <CodeBlock
+          title="Template com preservação de registradores"
+          language="asm"
+          code={`meuCodigo:
+    pushad          // salva EAX, EBX, ECX, EDX, ESI, EDI, EBP, ESP
+    pushfd          // salva as flags (EFLAGS)
+    
+    // Seu código aqui — pode modificar qualquer registrador livremente
+    mov eax, 9999
+    mov [ebx+4C], eax
+    
+    popfd           // restaura as flags
+    popad           // restaura todos os registradores
+    
+    // Executa a instrução original (que copiamos aqui)
+    // [instrução original]
+    
+    jmp retorno`}
+        />
+      </PageContainer>
+    );
+  }
+  
