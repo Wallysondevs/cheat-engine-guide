@@ -1,59 +1,110 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function ListaEnderecos() {
-  return (
-    <PageContainer
-      title="Lista de Endereços"
-      subtitle="Como gerenciar, nomear e organizar os endereços que você encontrou."
-      difficulty="iniciante"
-      timeToRead="6 min"
-    >
-      <h2>O que é a Lista de Endereços?</h2>
-      <p>
-        O painel inferior do Cheat Engine é a <strong>Address List</strong> — sua área de trabalho onde você salva e gerencia os endereços que encontrou. É aqui que você organiza todos os cheats de um jogo específico.
-      </p>
+  export default function ListaEnderecos() {
+    return (
+      <PageContainer
+        title="Lista de Endereços"
+        subtitle="Como organizar, nomear e gerenciar endereços encontrados na Address List do Cheat Engine."
+        difficulty="iniciante"
+        timeToRead="10 min"
+      >
+        <p>
+          A Address List (Lista de Endereços) é o painel inferior do Cheat Engine onde você adiciona endereços para monitorar e modificar. Ela funciona como uma planilha dos seus cheats ativos.
+        </p>
 
-      <h2>Adicionando Endereços</h2>
-      <ul>
-        <li><strong>Duplo clique</strong> em um resultado da lista superior para adicioná-lo</li>
-        <li><strong>Botão "Add address manually"</strong> (ícone de +) para adicionar um endereço que você já conhece</li>
-        <li><strong>Selecionar múltiplos</strong> + Enter para adicionar vários de uma vez</li>
-      </ul>
+        <h2>Adicionando Endereços</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Método</th>
+                <th className="p-3 text-left">Como fazer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Da lista de resultados", "Selecione endereços na lista e pressione Enter ou duplo clique, ou clique em 'Add to list'"],
+                ["Manualmente", "Clique no botão 'Add address manually' (ícone de mais azul) na barra inferior"],
+                ["Via Pointer", "Use 'Add address manually' → marque 'Pointer' → informe o endereço base e offsets"],
+                ["Via Lua", "Use addAddress() ou o objeto AddressList na API Lua do CE"],
+              ].map(([metodo, como], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-medium text-sm">{metodo}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{como}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <h2>Colunas da Lista</h2>
-      <div className="space-y-2 my-4 not-prose">
-        {[
-          { col: "Active (checkbox)", desc: "Quando marcado, o Freeze está ativo — o valor é mantido travado" },
-          { col: "Description", desc: "Nome que você dá ao endereço. Duplo clique para renomear." },
-          { col: "Address", desc: "Endereço hexadecimal na memória. Verde = estático, preto = dinâmico" },
-          { col: "Type", desc: "Tipo do dado (4 Bytes, Float, etc.)" },
-          { col: "Value", desc: "Valor atual. Duplo clique para modificar manualmente." },
-        ].map((item, i) => (
-          <div key={i} className="flex gap-3 border border-border rounded p-3 bg-card">
-            <code className="text-primary text-xs font-mono shrink-0">{item.col}</code>
-            <span className="text-sm text-muted-foreground">{item.desc}</span>
-          </div>
-        ))}
-      </div>
+        <h2>Colunas da Address List</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Coluna</th>
+                <th className="p-3 text-left">Função</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Active (checkbox)", "Ativa/desativa o freeze do endereço. Quando marcado, o CE mantém o valor constante."],
+                ["Description", "Nome/descrição que você dá ao endereço. Duplo clique para editar. Use nomes claros!"],
+                ["Address", "O endereço de memória. Verde = estático, preto = dinâmico, roxo = pointer."],
+                ["Type", "Tipo do dado: 4 Bytes, Float, String, etc. Duplo clique para mudar o tipo."],
+                ["Value", "Valor atual na memória. Atualiza em tempo real. Duplo clique para modificar."],
+              ].map(([col, func], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-mono text-primary text-sm">{col}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{func}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <h2>Operações na Lista</h2>
-      <ul>
-        <li><strong>Renomear:</strong> duplo clique na descrição</li>
-        <li><strong>Modificar valor:</strong> duplo clique na coluna Value</li>
-        <li><strong>Ativar Freeze:</strong> marcar o checkbox da coluna Active</li>
-        <li><strong>Deletar:</strong> selecionar + tecla Delete</li>
-        <li><strong>Organizar em grupos:</strong> botão "Add group" para criar pastas</li>
-      </ul>
+        <h2>Organizando com Grupos</h2>
+        <p>
+          Clique com botão direito na Address List → <strong>Add group</strong> para criar seções. Arraste endereços para dentro dos grupos. Isso é essencial para tabelas grandes.
+        </p>
+        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+          {[
+            { grupo: "Recursos", itens: "Vida, Mana, Stamina, XP, Ouro, Munição" },
+            { grupo: "Stats do Personagem", itens: "Força, Destreza, Inteligência, Nível" },
+            { grupo: "Posição / Velocidade", itens: "X, Y, Z, VelocidadeBase" },
+            { grupo: "Scripts", itens: "Agrupamento de scripts Lua e Auto Assembler" },
+          ].map((item) => (
+            <div key={item.grupo} className="border border-border rounded-xl p-4 bg-card">
+              <h4 className="font-bold text-sm mb-1 text-primary">{item.grupo}</h4>
+              <p className="text-xs text-muted-foreground">{item.itens}</p>
+            </div>
+          ))}
+        </div>
 
-      <h2>Salvando como Tabela (.CT)</h2>
-      <p>
-        Vá em <strong>File → Save</strong> para salvar todos os endereços, scripts e configurações em um arquivo <code>.CT</code> (Cheat Table). Na próxima sessão, abra o arquivo com <strong>File → Open</strong> e seus cheats estarão disponíveis novamente.
-      </p>
+        <h2>Opções do Botão Direito</h2>
+        <CodeBlock
+          title="Opções disponíveis ao clicar com botão direito"
+          language="text"
+          code={`Change value → Modifica o valor (mesmo que duplo clique)
+  Set hotkey → Atribui tecla de atalho para ativar/desativar o freeze
+  Change type → Muda o tipo de dado do endereço
+  Pointer scan for this address → Inicia pointer scan a partir deste endereço
+  Find out what writes to this address → Descobre o que escreve neste endereço
+  Find out what reads this address → Descobre o que lê este endereço
+  Toggle all checkboxes → Ativa/desativa todos de uma vez
+  Sort → Ordena por nome, endereço, tipo ou valor`}
+        />
 
-      <AlertBox type="warning" title="Endereços Dinâmicos">
-        Endereços que mudam a cada sessão (mostrados em preto) não funcionarão se você fechar e reabrir o jogo. Para cheats permanentes, você precisa usar ponteiros estáticos.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <AlertBox type="tip" title="Dica — Cores dos Endereços">
+          Os endereços têm cores com significado: <strong>Verde</strong> = estático (bom, funciona sempre), <strong>Preto</strong> = dinâmico (muda ao reiniciar), <strong>Roxo/Violeta</strong> = ponteiro configurado. Sempre prefira endereços verdes em suas tabelas.
+        </AlertBox>
+
+        <AlertBox type="info" title="Endereços com Script">
+          Você pode adicionar um script Lua ou Auto Assembler diretamente a um endereço. Quando o checkbox é ativado, o script é executado automaticamente. Isso permite cheats que vão além de simplesmente travar valores.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
