@@ -1,116 +1,148 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
-import { CodeBlock } from "@/components/ui/CodeBlock";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function LuaApi() {
-  return (
-    <PageContainer
-      title="API do Cheat Engine"
-      subtitle="Referência das funções mais importantes da API Lua do Cheat Engine."
-      difficulty="intermediário"
-      timeToRead="12 min"
-    >
-      <h2>Funções de Memória</h2>
-      <div className="space-y-2 my-4 not-prose">
-        {[
-          { fn: "readInteger(addr)", desc: "Lê 4 bytes como inteiro (signed)" },
-          { fn: "readSmallInteger(addr)", desc: "Lê 2 bytes como inteiro" },
-          { fn: "readByte(addr)", desc: "Lê 1 byte" },
-          { fn: "readFloat(addr)", desc: "Lê 4 bytes como float" },
-          { fn: "readDouble(addr)", desc: "Lê 8 bytes como double" },
-          { fn: "readQword(addr)", desc: "Lê 8 bytes como inteiro de 64 bits" },
-          { fn: "readString(addr, len)", desc: "Lê string ASCII com tamanho especificado" },
-          { fn: "writeInteger(addr, val)", desc: "Escreve inteiro de 4 bytes" },
-          { fn: "writeFloat(addr, val)", desc: "Escreve float de 4 bytes" },
-          { fn: "writeString(addr, str)", desc: "Escreve string ASCII" },
-          { fn: "readBytes(addr, len)", desc: "Lê N bytes como array" },
-          { fn: "writeBytes(addr, bytes)", desc: "Escreve array de bytes" },
-        ].map((item, i) => (
-          <div key={i} className="flex gap-3 border border-border rounded p-2.5 bg-card">
-            <code className="text-primary text-xs font-mono shrink-0">{item.fn}</code>
-            <span className="text-xs text-muted-foreground">{item.desc}</span>
-          </div>
-        ))}
-      </div>
+  export default function LuaApi() {
+    return (
+      <PageContainer
+        title="API Lua do Cheat Engine"
+        subtitle="Referência das principais funções e objetos disponíveis na API Lua do Cheat Engine."
+        difficulty="avançado"
+        timeToRead="16 min"
+      >
+        <p>
+          O Cheat Engine expõe uma API Lua extensa que permite controlar quase todas as funcionalidades do CE via script. Esta referência cobre as funções e objetos mais usados.
+        </p>
 
-      <h2>Funções de Processo</h2>
-      <CodeBlock
-        title="Operações de Processo"
-        language="lua"
-        code={`
--- Obter processo atual
-local processo = getOpenedProcessID()
+        <h2>Funções de Memória</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Função</th>
+                <th className="p-3 text-left">Retorno / Parâmetros</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["readInteger(addr)", "Lê 4 bytes como inteiro assinado"],
+                ["readSmallInt(addr)", "Lê 2 bytes como inteiro"],
+                ["readFloat(addr)", "Lê 4 bytes como float"],
+                ["readDouble(addr)", "Lê 8 bytes como double"],
+                ["readBytes(addr, size)", "Lê N bytes — retorna table de bytes"],
+                ["readString(addr, length, unicode)", "Lê string ASCII ou Unicode"],
+                ["writeInteger(addr, val)", "Escreve inteiro de 4 bytes"],
+                ["writeFloat(addr, val)", "Escreve float de 4 bytes"],
+                ["writeDouble(addr, val)", "Escreve double de 8 bytes"],
+                ["writeBytes(addr, b1, b2, ...)", "Escreve bytes individuais"],
+                ["writeString(addr, str, unicode)", "Escreve string na memória"],
+                ["getAddress(name)", "Resolve nome de símbolo para endereço (ex: 'game.exe')"],
+              ].map(([func, desc], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-mono text-primary text-xs">{func}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
--- Resolver nome de módulo para endereço
-local base = getModuleAddress("game.exe")
-print(string.format("Base: %X", base))
+        <h2>Objetos Principais</h2>
+        <CodeBlock
+          title="Objetos e suas propriedades"
+          language="lua"
+          code={`-- getAddressList() → objeto AddressList
+  local al = getAddressList()
+  al.Count                                -- número de Memory Records
+  al.getMemoryRecord(index)               -- por índice (0-based)
+  al.getMemoryRecordByDescription("nome") -- por descrição
+  al.createMemoryRecord()                 -- criar novo Memory Record
 
--- Alocar memória no processo
-local addr = allocateMemory(128)
+  -- Memory Record (mr)
+  mr.Description       -- nome do endereço
+  mr.Address           -- endereço como string
+  mr.Type              -- tipo (vtDword, vtFloat, vtString, etc.)
+  mr.Value             -- valor atual (string)
+  mr.Active            -- boolean — freeze ativo
+  mr.Script            -- script AA associado
 
--- Desalocar
-freeMemory(addr)
+  -- getProcess()
+  local proc = getOpenedProcessID()  -- PID do processo
+  local name = getProcessIDFromName("game.exe")  -- PID por nome
 
--- AOB Scan
-local resultado = AOBScan("89 46 4C ?? 4D F8")
-if resultado ~= nil then
-  print(string.format("Encontrado em: %X", resultado[0]))
-end
-        `}
-      />
+  -- createHotkey(callback, key, shift, ctrl, alt)
+  local hk = createHotkey(function() print("F1!") end, VK_F1)`}
+        />
 
-      <h2>Funções de Tempo</h2>
-      <CodeBlock
-        title="Timers e Sleep"
-        language="lua"
-        code={`
--- Criar um timer que executa a cada 1 segundo
-local timer = createTimer(nil)
-timer.Interval = 1000  -- 1000ms = 1 segundo
-timer.OnTimer = function(sender)
-  -- Código executado a cada segundo
-  local vida = readInteger(0x1A2B3C4D)
-  if vida < 50 then
-    writeInteger(0x1A2B3C4D, 100)
-    print("Vida restaurada!")
+        <h2>Constantes de Tipo de Valor</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Constante Lua</th>
+                <th className="p-3 text-left">Tipo no CE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["vtByte", "Byte (1 byte)"],
+                ["vtWord", "2 Bytes (short)"],
+                ["vtDword", "4 Bytes (int)"],
+                ["vtQword", "8 Bytes (long)"],
+                ["vtSingle", "Float"],
+                ["vtDouble", "Double"],
+                ["vtString", "String"],
+                ["vtByteArray", "Array of Bytes"],
+              ].map(([const_, tipo], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-mono text-primary text-sm">{const_}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{tipo}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Funções de Interface Gráfica</h2>
+        <CodeBlock
+          title="Criando UI com a API Lua do CE"
+          language="lua"
+          code={`-- Criar janela
+  local form = createForm(true) -- true = form padrão do Lua
+  form.Caption = "Meu Trainer"
+  form.Width = 350
+  form.Height = 300
+  form.Position = poScreenCenter  -- centralizar na tela
+
+  -- Botão
+  local btn = createButton(form)
+  btn.Caption = "Vida Infinita"
+  btn.Left = 20; btn.Top = 20
+  btn.Width = 200; btn.Height = 35
+  btn.OnClick = function(s)
+    writeInteger("game.exe+0x123", 9999)
   end
-end
-timer.Enabled = true
 
--- Para o timer depois de 10 segundos
-sleep(10000)
-timer.Enabled = false
-timer.destroy()
-        `}
-      />
+  -- Label
+  local lbl = createLabel(form)
+  lbl.Caption = "Status: Ativo"
+  lbl.Left = 20; lbl.Top = 70
 
-      <h2>Interface Gráfica (Forms)</h2>
-      <CodeBlock
-        title="Criar Janela GUI"
-        language="lua"
-        code={`
-local form = createForm()
-form.Caption = "Meu Trainer"
-form.Width = 300
-form.Height = 200
+  -- Checkbox
+  local chk = createCheckBox(form)
+  chk.Caption = "Speed Hack x2"
+  chk.Left = 20; chk.Top = 100
+  chk.OnChange = function(s)
+    speedhack_setSpeed(chk.State == cbChecked and 2.0 or 1.0)
+  end
 
-local btn = createButton(form)
-btn.Caption = "Vida Infinita"
-btn.Left = 50
-btn.Top = 50
-btn.Width = 200
-btn.OnClick = function(sender)
-  writeInteger(0x1A2B3C4D, 9999)
-  showMessage("Vida máxima ativada!")
-end
+  form.show()`}
+        />
 
-form.show()
-        `}
-      />
-
-      <AlertBox type="tip" title="Documentação Completa">
-        A documentação completa da API está em <strong>Help → Cheat Engine Lua Extensions</strong> dentro do próprio CE, ou em <code>cheatengine.org/forum/</code> na seção Lua.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <AlertBox type="info" title="Documentação completa da API">
+          A documentação completa da API Lua do CE está disponível em: github.com/cheat-engine/cheat-engine/blob/master/Cheat%20Engine/bin/autorun/LuaInterface.md — consulte para funções avançadas como criação de tipos personalizados, acesso ao disassembler via Lua e controle do debugger.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
