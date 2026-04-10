@@ -1,72 +1,95 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
-import { CodeBlock } from "@/components/ui/CodeBlock";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function Breakpoints() {
-  return (
-    <PageContainer
-      title="Breakpoints"
-      subtitle="Use breakpoints para pausar a execução do jogo e inspecionar o estado da memória em tempo real."
-      difficulty="avançado"
-      timeToRead="10 min"
-    >
-      <AlertBox type="info" title="O que são Breakpoints?">
-        Breakpoints são pontos de parada na execução do programa. Quando o CPU atinge um breakpoint, o jogo pausa e o Cheat Engine mostra o estado atual dos registradores e da memória.
-      </AlertBox>
+  export default function Breakpoints() {
+    return (
+      <PageContainer
+        title="Breakpoints"
+        subtitle="Como pausar a execução do jogo em pontos específicos para inspecionar e modificar valores em tempo real."
+        difficulty="intermediário"
+        timeToRead="12 min"
+      >
+        <p>
+          Breakpoints (pontos de parada) pausam a execução do jogo quando uma condição específica é atendida — como quando o jogo acessa ou modifica um endereço de memória. São essenciais para entender como o jogo funciona internamente.
+        </p>
 
-      <h2>Tipos de Breakpoints no CE</h2>
-      <div className="space-y-3 my-4 not-prose">
-        {[
-          { tipo: "Software Breakpoint (INT3)", desc: "Substitui a instrução por INT3. Fácil de detectar por anti-cheats. Pausa na execução da instrução.", melhor: "Debug básico" },
-          { tipo: "Hardware Breakpoint (DR0-DR3)", desc: "Usa os registradores de debug do hardware. Mais difícil de detectar. Limitado a 4 breakpoints simultâneos.", melhor: "Anti-cheat evasion" },
-          { tipo: "Memory Breakpoint", desc: "Monitora uma região de memória e pausa quando é lida/escrita/executada.", melhor: "Encontrar código que acessa um dado" },
-        ].map((item, i) => (
-          <div key={i} className="border border-border rounded-lg p-3 bg-card">
-            <div className="font-semibold text-sm">{item.tipo}</div>
-            <p className="text-sm text-muted-foreground mt-1">{item.desc}</p>
-            <div className="text-xs text-primary mt-1">Melhor para: {item.melhor}</div>
-          </div>
-        ))}
-      </div>
+        <h2>Tipos de Breakpoints</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Tipo</th>
+                <th className="p-3 text-left">Quando pausa</th>
+                <th className="p-3 text-left">Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Software Breakpoint", "Quando a execução chega a uma instrução Assembly específica", "Debugging de código — ver o estado na hora exata de uma instrução"],
+                ["Hardware Breakpoint (Access)", "Quando qualquer código lê OU escreve em um endereço de memória", "Descobrir quem acessa um valor"],
+                ["Hardware Breakpoint (Write)", "Quando qualquer código escreve em um endereço de memória", "Descobrir o que modifica a vida, XP, etc."],
+                ["Hardware Breakpoint (Execute)", "Quando o código em um endereço é executado", "Breakpoint em código sem modificar a memória"],
+              ].map(([tipo, quando, uso], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-medium text-sm text-primary">{tipo}</td>
+                  <td className="p-3 text-sm">{quando}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{uso}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <h2>Setando um Breakpoint</h2>
-      <ol>
-        <li>Abra o Memory View e navegue até a instrução desejada</li>
-        <li>Clique com botão direito na instrução</li>
-        <li>Selecione <strong>"Set breakpoint"</strong> ou pressione <code>F5</code></li>
-        <li>A instrução ficará marcada em vermelho</li>
-        <li>Quando o jogo executar essa instrução, a execução pausará</li>
-      </ol>
+        <h2>Adicionando Breakpoints</h2>
+        <h3>Breakpoint em Endereço de Memória</h3>
+        <CodeBlock
+          title="Definir breakpoint via Address List"
+          language="text"
+          code={`1. Encontre o endereço do valor (ex: vida do personagem)
+  2. Clique com botão direito → "Find out what writes to this address"
+  3. Uma janela de debug se abre — configure o tipo: Write
+  4. Interaja com o jogo para fazer o valor mudar
+  5. O CE pausará automaticamente e mostrará a instrução responsável`}
+        />
 
-      <h2>Quando o Breakpoint É Atingido</h2>
-      <p>
-        O jogo congela e o CE exibe o estado atual:
-      </p>
-      <ul>
-        <li><strong>Registradores:</strong> EAX, EBX, ECX, EDX, ESI, EDI, ESP, EBP, EIP (x86)</li>
-        <li><strong>Stack:</strong> valores na pilha de execução</li>
-        <li><strong>Memória:</strong> bytes ao redor do ponto de parada</li>
-      </ul>
-      <p>
-        Você pode usar <code>F7</code> (Step Into) ou <code>F8</code> (Step Over) para executar instrução por instrução.
-      </p>
+        <h3>Breakpoint no Disassembler</h3>
+        <CodeBlock
+          title="Definir breakpoint em instrução Assembly"
+          language="text"
+          code={`1. Abra o Memory View (Ctrl+M)
+  2. Navegue até o endereço da instrução (Ctrl+G)
+  3. Clique na instrução desejada
+  4. Pressione F5 para toggle breakpoint
+     (ou: clique na margem esquerda — aparece um ponto vermelho)
+  5. O CE pausará quando a instrução for executada`}
+        />
 
-      <h2>Breakpoint Condicional</h2>
-      <CodeBlock
-        title="Exemplo — Breakpoint Lua"
-        language="lua"
-        code={`
--- Pausa apenas quando EAX < 10 (vida crítica)
-if EAX < 10 then
-  return true   -- pausar execução
-end
-return false    -- continuar sem pausar
-        `}
-      />
+        <h2>O que fazer quando o breakpoint é atingido</h2>
+        <div className="not-prose grid grid-cols-1 gap-3 my-4">
+          {[
+            { acao: "Ver registradores", desc: "O painel direito mostra EAX, EBX, ECX... Você vê exatamente quais valores o código está operando." },
+            { acao: "Ver Stack", desc: "O painel inferior direito mostra a pilha de chamadas — você vê quais funções chamaram este código." },
+            { acao: "Modificar valores", desc: "Duplo clique em qualquer registrador para alterar seu valor antes de continuar." },
+            { acao: "Step Over (F8)", desc: "Executa a instrução atual e para na próxima. Não entra em funções chamadas." },
+            { acao: "Step Into (F7)", desc: "Executa a instrução atual. Se for CALL, entra na função chamada." },
+            { acao: "Run (F9)", desc: "Continua a execução normalmente até o próximo breakpoint." },
+          ].map((item) => (
+            <div key={item.acao} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
+              <span className="text-primary font-mono text-sm min-w-32 font-bold">{item.acao}</span>
+              <p className="text-sm text-muted-foreground">{item.desc}</p>
+            </div>
+          ))}
+        </div>
 
-      <AlertBox type="warning" title="Atenção com Anti-Cheat">
-        Jogos com proteção anti-cheat detectam debuggers ativos. Use <strong>Hardware Breakpoints</strong> em vez de Software Breakpoints, e considere usar o <strong>DBVM</strong> (hypervisor do CE) para maior invisibilidade.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <AlertBox type="warning" title="Breakpoints pausam o jogo inteiro">
+          Quando um breakpoint é atingido, todo o processo para. Em jogos online, isso pode causar timeout e desconexão. Use breakpoints apenas em jogos single-player ou em um ambiente seguro.
+        </AlertBox>
+
+        <AlertBox type="tip" title="Dica — Conditional Breakpoints">
+          No Cheat Engine, você pode adicionar uma condição ao breakpoint. Por exemplo: só pausar se EAX == 0 (quando o dano seria zero). Isso evita pausas desnecessárias quando a instrução é executada em outros contextos.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
