@@ -5,115 +5,95 @@ import { PageContainer } from "@/components/layout/PageContainer";
   export default function ValorDesconhecido() {
     return (
       <PageContainer
-        title="Valor Desconhecido"
-        subtitle="Como encontrar valores quando você não sabe o que procurar — técnicas avançadas de varredura."
+        title="Encontrando Valores Desconhecidos"
+        subtitle="Como encontrar e identificar valores na memória quando você não sabe exatamente o que procurar."
         difficulty="intermediário"
-        timeToRead="14 min"
+        timeToRead="18 min"
       >
+        <h2>O desafio dos valores ocultos</h2>
         <p>
-          Nem sempre você sabe o valor exato que está buscando. Vida mostrada como barra sem número, criptografia de valores, ou simplesmente não saber a unidade usada pelo jogo — nesses casos, você precisa de técnicas específicas.
+          Nem todo valor de jogo é explicitamente mostrado ao jogador. A barra de HP é vermelha e parcialmente cheia, mas não há número. O medidor de stamina é visual, sem dígitos. A "energia" de uma habilidade especial é representada por um efeito gráfico, não um contador. A posição do personagem existe internamente mas não é exibida. Em todos esses casos, você sabe que o valor existe, mas não sabe que número procurar.
+        </p>
+        <p>
+          Além dos valores ocultos visualmente, existe outro desafio: valores que existem mas são representados de forma diferente do esperado. A vida pode ser armazenada como 1.0 (100%) em vez de 100. O ouro pode ter um XOR com uma chave aleatória para dificultar a leitura. A velocidade pode estar em centímetros por segundo em vez de metros por segundo. Em todos esses casos, o Exact Value não funciona — você precisa de abordagens diferentes.
         </p>
 
-        <h2>O Poder do "Unknown Initial Value"</h2>
+        <h2>A Varredura de Valor Desconhecido</h2>
         <p>
-          A varredura <strong>Unknown Initial Value</strong> varre toda a memória sem filtro de valor — armazenando um snapshot de tudo. Nas próximas varreduras, você usa comparações relativas para filtrar.
+          O ponto de partida para qualquer valor desconhecido é o tipo de scan <strong>Unknown Initial Value</strong> do Cheat Engine. Em vez de buscar um número específico, essa varredura simplesmente fotografa todo o estado atual da memória do processo — armazena uma cópia de todos os bytes. Nas varreduras subsequentes, o CE compara o estado atual com esse snapshot para filtrar baseado em como os valores mudaram.
+        </p>
+        <p>
+          A desvantagem é o custo: um processo moderno pode ter 2-4 GB de memória, e a varredura de Unknown Initial Value precisa armazenar todo esse conteúdo. Você precisará de RAM livre suficiente e paciência para a varredura inicial, que pode levar de 30 segundos a vários minutos dependendo do tamanho do processo e velocidade do disco.
+        </p>
+        <p>
+          Para minimizar o impacto: antes de fazer uma varredura de Unknown Initial Value, feche outros programas pesados (navegador com muitas abas, outros jogos), desative o antivírus temporariamente (pode interferir com a leitura de memória), e esteja num estado estável no jogo onde o valor que você quer buscar está em algum valor que você consegue mudar de forma controlada.
         </p>
 
-        <AlertBox type="info" title="Atenção: Consome mais memória e tempo">
-          Uma scan de Unknown Initial Value pode levar 30-60 segundos e usar vários GB de RAM, pois armazena todo o estado da memória. Feche outros programas antes.
+        <h2>Estratégias de Refinamento para Valores Ocultos</h2>
+        <p>
+          Após o snapshot inicial, você precisa refinar usando comparações relativas. A chave é fazer mudanças controladas e previsíveis no valor que você está buscando, alternando entre varreduras de "mudou" e "não mudou".
+        </p>
+        <p>
+          <strong>Para barras de HP sem número:</strong> A estratégia clássica é alternar entre tomar dano e se curar. Após o Unknown Initial Value: tome algum dano (a barra diminui) → Next Scan "Decreased Value" (elimina tudo que não diminuiu). Cure-se (a barra sobe) → Next Scan "Increased Value". Tome dano de novo → "Decreased Value". Repita 5-8 vezes. O endereço da HP vai aparecer consistentemente como um valor que segue exatamente esse padrão — cai quando você toma dano, sobe quando você se cura.
+        </p>
+        <p>
+          <strong>Para valores que só mudam em momentos específicos:</strong> Use a alternância entre "Changed" e "Unchanged". Quando o valor muda, use Changed. Quando o valor não muda, use Unchanged. Isso é eficaz para valores como "energia especial" que só se acumula quando você faz certas ações — você pode controlar exatamente quando ela muda e quando não.
+        </p>
+        <p>
+          <strong>Para valores de posição:</strong> Mova o personagem numa direção → "Changed" (a posição mudou). Pare completamente → "Unchanged" (a posição não mudou). Mova noutra direção → "Changed". Esse padrão identifica rapidamente coordenadas X, Y e Z, mesmo sem saber quais valores elas têm.
+        </p>
+
+        <h2>Quando o Valor é uma Fração (0.0 a 1.0)</h2>
+        <p>
+          Muitos jogos armazenam barras de recurso como frações — 1.0 para 100% cheio, 0.5 para metade, 0.0 para vazio. Se você está buscando vida com Exact Value e tipo Integer e não encontra nada, experimente Float com valor entre 0.0 e 1.0.
+        </p>
+        <p>
+          A abordagem com tipo Float e valor desconhecido: Unknown Initial Value com tipo Float → tome dano (a fração cai) → Decreased Value → cure-se (a fração sobe) → Increased Value → tome dano → Decreased Value. Geralmente em 3-5 ciclos você chega ao endereço. Quando encontrá-lo, o valor vai ser algo como 0.65 se você está com 65% de vida.
+        </p>
+        <CodeBlock
+          title="Verificando se um valor é uma fração"
+          language="text"
+          code={`Se você encontrou um candidato e o valor é algo como 0.647 ou 1.0:
+
+  1. Adicione à Address List
+  2. Veja na coluna Value: se mostrar valores como 0.xxx, é um float percentual
+  3. No jogo, verifique se 0.647 corresponde aproximadamente a 65% de vida
+  4. Para setar vida max: defina o valor para 1.0 (e não para 100!)
+  5. Para freeze de vida max: freeze em 1.0 (100%)
+
+  Se o valor mostrado não faz sentido como percentual:
+  → Tente Double em vez de Float (mais precisão)
+  → Tente 4 Bytes Integer (pode ser 100 mesmo, mas você estava buscando como Float)`}
+        />
+
+        <h2>Valores Criptografados</h2>
+        <p>
+          Alguns jogos aplicam transformações matemáticas aos valores antes de armazená-los na memória, deliberadamente para dificultar a detecção por ferramentas como o Cheat Engine. O valor real é 100 de ouro, mas na memória está guardado como 100 × 1337 = 133700 (XOR, multiplicação, ou outras operações). Quando você busca 100, não encontra nada — porque na memória está 133700.
+        </p>
+        <p>
+          Sinais de que um valor pode estar criptografado: você tem certeza de qual é o valor (ex: 100 de vida visível na HUD), mas Exact Value com Integer e Float retornam zero resultados depois de várias varreduras. Ou você encontra resultados mas quando modifica o valor, o jogo não responde.
+        </p>
+        <p>
+          A abordagem para valores criptografados: use Unknown Initial Value + Changed/Unchanged. Isso não tenta adivinhar o valor criptografado — apenas rastreia quais endereços mudam junto com o valor visível. Após encontrar o endereço, você pode tentar descobrir a criptografia via "Find out what writes to this address" e analisar o código Assembly que escreve lá — a transformação matemática estará visível nas instruções.
+        </p>
+        <p>
+          Versões mais recentes do Cheat Engine têm um campo "Encrypted scan" nas configurações que tenta diferentes transformações automaticamente. Vale explorar se o método manual não funcionar.
+        </p>
+
+        <h2>Identificando o Que Você Encontrou</h2>
+        <p>
+          Após encontrar um candidato, você precisa confirmar que é realmente o valor que buscava e não um falso positivo. A técnica mais confiável é o "teste de controle": defina o valor para um número bem específico e observe o efeito no jogo.
+        </p>
+        <p>
+          Se você está buscando HP e encontrou um candidato mostrando 0.73 (Float), defina para 0.0 e observe: o personagem morreu? Ótimo, é o HP. Então defina para 1.0 — o HP está cheio? Perfeito, confirmado. Se ao definir 0.0 nada aconteceu no jogo, provavelmente não é o HP e sim outro float com valor similar que mudou junto com o HP por coincidência.
+        </p>
+
+        <AlertBox type="tip" title="Paciência com valores desconhecidos">
+          Encontrar valores ocultos pode levar mais tempo que valores visíveis — são necessários mais ciclos de refinamento. Mas o processo é metódico e funciona: cada varredura elimina falsos positivos, e eventualmente você chega ao endereço certo. Não apresse o processo pulando varreduras.
         </AlertBox>
 
-        <h2>Estratégias por Tipo de Valor</h2>
-
-        <h3>Barra de Vida sem Número</h3>
-        <CodeBlock
-          title="Encontrando HP de barra"
-          language="text"
-          code={`1. Unknown Initial Value (tipo: Float ou 4 Bytes)
-  2. Tome dano → Next Scan: Decreased Value
-  3. Cure-se → Next Scan: Increased Value
-  4. Tome dano novamente → Next Scan: Decreased Value
-  5. Repita até poucos resultados (geralmente 5-20 ciclos)`}
-        />
-
-        <h3>Valor Criptografado</h3>
-        <p>
-          Alguns jogos multiplicam o valor por uma chave aleatória para dificultar a busca. A vida real é 100, mas na memória está armazenada como 100 × 1337 = 133700.
-        </p>
-        <CodeBlock
-          title="Detectando valores criptografados"
-          language="text"
-          code={`Sintomas de criptografia:
-  - Exact Value com o valor correto não encontra nada
-  - Changed/Unchanged Value encontra candidatos mas não batem com o esperado
-
-  Solução 1: Usar Unknown Initial Value + Changed/Unchanged
-  Solução 2: Menu Edit → Settings → Scan Settings → Enable "Encrypted value scan"
-  Solução 3: Encontrar o código que escreve no endereço e analisar a criptografia`}
-        />
-
-        <h3>Valores em Porcentagem (0.0 a 1.0)</h3>
-        <CodeBlock
-          title="Buscando valores percentuais"
-          language="text"
-          code={`Tipo: Float
-  Valor: 1.0 (100%), 0.5 (50%), 0.75 (75%)
-
-  Se a vida está em 3/4:
-  First Scan: Exact Value = 0.75 (Float)
-  Tome dano até ~50%
-  Next Scan: Exact Value = 0.5
-
-  Alternativa: Value between 0.0 and 1.0 (Float)
-  depois refinar com Changed/Unchanged`}
-        />
-
-        <h2>Identificando o Tipo de Dado Correto</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Tipo de Valor</th>
-                <th className="p-3 text-left">Provável tipo de dado</th>
-                <th className="p-3 text-left">Dica</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Vida, ouro, XP pequenos (0-65535)", "2 Bytes (Short)", "Jogos 16-bit ou valores compactos"],
-                ["Vida, ouro, XP grandes", "4 Bytes (Int)", "O mais comum para RPGs e shooters"],
-                ["Velocidade, porcentagem, precisão", "Float", "Valores com casas decimais"],
-                ["Coordenadas X, Y, Z", "Float ou Double", "Tente float primeiro"],
-                ["Texto, nomes", "String (Array of Bytes)", "Use 'Text' no tipo de scan"],
-              ].map(([tipo, dado, dica], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 text-sm">{tipo}</td>
-                  <td className="p-3 font-mono text-primary text-xs">{dado}</td>
-                  <td className="p-3 text-muted-foreground text-xs">{dica}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2>Técnica de Diferencial</h2>
-        <p>
-          Quando nada funciona, use a técnica do diferencial: ao invés de buscar o valor, busque a <strong>diferença</strong> entre estados.
-        </p>
-        <CodeBlock
-          title="Técnica do diferencial"
-          language="text"
-          code={`Você tem 80 de vida (não sabe o valor exato na memória)
-  Tome exatamente 20 de dano (agora está com 60)
-
-  Agora busque por "Decreased by 20" no próximo scan
-
-  O CE vai encontrar todos os valores que diminuíram exatamente 20
-  — muito mais preciso do que Changed/Decreased genérico`}
-        />
-
-        <AlertBox type="tip" title="Dica — Varredura em Modo Debug">
-          Habilite o debugger do CE (menu Debug → Enable Debugger) e adicione um watchpoint no endereço encontrado. Quando o valor mudar, o CE pausará e mostrará exatamente qual instrução do jogo está alterando o valor — isso revela a lógica por trás do número.
+        <AlertBox type="info" title="Tipo de dado importa muito mais aqui">
+          Com valores visíveis, você pode tentar Integer e se não funcionar tentar Float. Com valores ocultos, você não sabe qual tipo usar. Faça varreduras separadas com 4 Bytes, Float e Double para o mesmo valor. Muitas vezes o tipo errado é a razão de não encontrar nada, não a técnica.
         </AlertBox>
       </PageContainer>
     );

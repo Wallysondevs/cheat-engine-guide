@@ -5,89 +5,108 @@ import { PageContainer } from "@/components/layout/PageContainer";
   export default function Breakpoints() {
     return (
       <PageContainer
-        title="Breakpoints"
-        subtitle="Como pausar a execução do jogo em pontos específicos para inspecionar e modificar valores em tempo real."
+        title="Breakpoints e Debugging"
+        subtitle="Como usar breakpoints para pausar o jogo em momentos exatos, inspecionar o estado interno e modificar o comportamento."
         difficulty="intermediário"
-        timeToRead="12 min"
+        timeToRead="18 min"
       >
+        <h2>O que é um breakpoint e por que usar</h2>
         <p>
-          Breakpoints (pontos de parada) pausam a execução do jogo quando uma condição específica é atendida — como quando o jogo acessa ou modifica um endereço de memória. São essenciais para entender como o jogo funciona internamente.
+          Um breakpoint é um ponto de parada — quando a execução do processo chega a um breakpoint, o CE pausa tudo e te dá controle completo para inspecionar o estado atual: registradores, memória, pilha de chamadas. É como ter um "pause" na execução do jogo no momento exato que te interessa.
+        </p>
+        <p>
+          Por que isso é importante para engenharia reversa? Porque a memória sozinha não conta toda a história. Você viu que a vida diminui, mas não sabe exatamente qual linha de código faz isso, quais valores são usados no cálculo, de onde vem o objeto do personagem. Um breakpoint te coloca no momento exato em que o código responsável está executando, com todos os registradores mostrando os valores que ele está usando.
         </p>
 
         <h2>Tipos de Breakpoints</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Tipo</th>
-                <th className="p-3 text-left">Quando pausa</th>
-                <th className="p-3 text-left">Uso</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Software Breakpoint", "Quando a execução chega a uma instrução Assembly específica", "Debugging de código — ver o estado na hora exata de uma instrução"],
-                ["Hardware Breakpoint (Access)", "Quando qualquer código lê OU escreve em um endereço de memória", "Descobrir quem acessa um valor"],
-                ["Hardware Breakpoint (Write)", "Quando qualquer código escreve em um endereço de memória", "Descobrir o que modifica a vida, XP, etc."],
-                ["Hardware Breakpoint (Execute)", "Quando o código em um endereço é executado", "Breakpoint em código sem modificar a memória"],
-              ].map(([tipo, quando, uso], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-medium text-sm text-primary">{tipo}</td>
-                  <td className="p-3 text-sm">{quando}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{uso}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p>
+          O Cheat Engine suporta dois tipos fundamentais de breakpoints, cada um com propósitos diferentes:
+        </p>
+        <p>
+          <strong>Software Breakpoints (INT3):</strong> São implementados modificando a primeira instrução no endereço alvo para a instrução INT3 (byte 0xCC). Quando o processador executa 0xCC, ele gera uma exceção que o debugger (CE) intercepta, pausando a execução. São os breakpoints mais comuns, mas têm uma limitação: eles modificam o código na memória, o que alguns anti-cheats detectam.
+        </p>
+        <p>
+          <strong>Hardware Breakpoints:</strong> Usam registradores especiais do processador (DR0-DR7, os "debug registers") para definir condições de parada sem modificar o código. São mais furtivos e mais versáteis — podem pausar não apenas quando código é executado, mas quando qualquer instrução lê ou escreve um endereço de memória específico, independente de onde no código essa instrução estiver.
+        </p>
+        <p>
+          A distinção prática: use software breakpoints quando você já sabe qual instrução quer analisar e quer pausar quando ela executar. Use hardware breakpoints quando quer pausar sempre que um endereço de memória específico for acessado — essencial para descobrir quem escreve ou lê um valor.
+        </p>
 
-        <h2>Adicionando Breakpoints</h2>
-        <h3>Breakpoint em Endereço de Memória</h3>
+        <h2>Adicionando um Software Breakpoint</h2>
+        <p>
+          Na janela do Memory View com o disassembler aberto, navegue até a instrução onde quer pausar. Clique na instrução para selecioná-la, depois pressione <kbd>F5</kbd> para toggle do breakpoint. Um ponto vermelho aparece na margem esquerda indicando que o breakpoint está ativo. Pressione F5 novamente para remover.
+        </p>
+        <p>
+          Você também pode clicar diretamente na margem esquerda (a área cinza ao lado dos endereços) para adicionar/remover um breakpoint com um clique. Breakpoints que você adicionou aparecem também no menu Debug → Breakpoints List, onde você pode gerenciá-los todos de uma vez.
+        </p>
+        <p>
+          Uma vez que o breakpoint está configurado, volte ao jogo e cause a ação que dispara aquele código (tome dano, use uma habilidade, compre algo). O CE detecta a execução e pausa o processo — o jogo congela, a janela do CE ganha foco, e você vê os registradores atuais no painel direito do Memory View.
+        </p>
+
+        <h2>Adicionando Hardware Breakpoints</h2>
+        <p>
+          Os hardware breakpoints mais úteis são adicionados a endereços de memória, não a endereços de código. O workflow típico:
+        </p>
+        <p>
+          1. Encontre o endereço do valor que você quer rastrear (ex: a vida do personagem). 2. Na Address List ou na lista de resultados, clique com botão direito → "Find out what writes to this address". Uma janela abre monitorando writes naquele endereço. 3. Cause uma mudança no valor no jogo (tome dano). 4. A instrução que escreveu aparece na lista. Agora você pode ir ao disassembler naquela instrução para análise detalhada.
+        </p>
+        <p>
+          Alternativamente, para definir um hardware breakpoint de Read (para descobrir quem lê o valor), use "Find out what reads this address". Isso é útil quando você quer saber qual sistema usa o valor — por exemplo, qual função de rendering lê a vida para atualizar a barra na HUD.
+        </p>
+
+        <h2>Controlando a Execução Após um Breakpoint</h2>
+        <p>
+          Quando o processo está pausado num breakpoint, o jogo está completamente congelado. Você pode tomar o tempo que quiser para analisar. Quando estiver pronto para continuar, o CE oferece várias opções de execução:
+        </p>
+        <p>
+          <strong>F9 — Run:</strong> Continua a execução normalmente até o próximo breakpoint (ou indefinidamente, se não houver mais breakpoints). O jogo volta a rodar. Use quando terminou a análise do momento atual.
+        </p>
+        <p>
+          <strong>F8 — Step Over:</strong> Executa apenas a instrução atual e para na próxima. Se a instrução atual for um CALL (chamada de função), F8 executa toda a função chamada de uma vez e para na instrução após o CALL — sem entrar dentro da função. Use quando quer avançar linha por linha sem mergulhar em funções.
+        </p>
+        <p>
+          <strong>F7 — Step Into:</strong> Igual ao F8, mas se a instrução for um CALL, entra dentro da função chamada e para na primeira instrução dela. Use quando quer analisar o interior de uma função específica.
+        </p>
+        <p>
+          <strong>Shift+F8 ou F6 — Step Out:</strong> Executa até o fim da função atual e para na instrução que chama esta função (o endereço de retorno). Útil quando você entrou demais em uma função e quer voltar ao nível de chamada.
+        </p>
+
+        <h2>O que Fazer com o Processo Pausado</h2>
+        <p>
+          Enquanto o processo está pausado, você tem acesso total ao estado do processador. O painel de registradores mostra todos os valores atuais — duplo clique em qualquer registrador para editá-lo. Você pode modificar EAX antes de continuar para mudar o resultado de um cálculo. Pode toggle ZF para forçar uma condição de salto a tomar um caminho diferente. Pode navegar pelo hex editor enquanto o processo está pausado para inspecionar áreas de memória específicas.
+        </p>
         <CodeBlock
-          title="Definir breakpoint via Address List"
+          title="Workflow completo de análise com breakpoint"
           language="text"
-          code={`1. Encontre o endereço do valor (ex: vida do personagem)
-  2. Clique com botão direito → "Find out what writes to this address"
-  3. Uma janela de debug se abre — configure o tipo: Write
-  4. Interaja com o jogo para fazer o valor mudar
-  5. O CE pausará automaticamente e mostrará a instrução responsável`}
+          code={`Cenário: descobrir como o dano é calculado
+
+  1. Encontre o endereço da vida por varredura
+  2. "Find out what writes" → identifique a instrução: MOV [EBX+4C], ECX em 0x00A1F22C
+  3. Abra o Memory View → Ctrl+G → 0x00A1F22C
+  4. Clique na instrução → F5 para breakpoint
+  5. Volte ao jogo → tome dano → CE pausa
+  6. Anote os valores: ECX = novo HP (ex: 75), EAX = dano causado (ex: 25)
+  7. Veja as instruções anteriores: SUB ECX, EAX ← aqui calculou HP - Dano
+  8. Ainda mais acima: CALL que retornou o dano em EAX
+  9. Para anular o dano: modifique EAX = 0 e pressione F9
+     Resultado: o SUB vai fazer HP - 0 = HP inalterado!
+  10. Ou: modifique ECX = 100 para setar HP para 100 independente do dano`}
         />
 
-        <h3>Breakpoint no Disassembler</h3>
-        <CodeBlock
-          title="Definir breakpoint em instrução Assembly"
-          language="text"
-          code={`1. Abra o Memory View (Ctrl+M)
-  2. Navegue até o endereço da instrução (Ctrl+G)
-  3. Clique na instrução desejada
-  4. Pressione F5 para toggle breakpoint
-     (ou: clique na margem esquerda — aparece um ponto vermelho)
-  5. O CE pausará quando a instrução for executada`}
-        />
+        <h2>Conditional Breakpoints — Pausando apenas quando necessário</h2>
+        <p>
+          Um problema comum com breakpoints em código de jogo é que eles disparam com muita frequência. Se a instrução que escreve a vida for chamada 60 vezes por segundo, seu breakpoint vai pausar o jogo a cada poucos segundos mesmo quando você não quer. A solução são os conditional breakpoints — breakpoints que pausam apenas quando uma condição específica é verdadeira.
+        </p>
+        <p>
+          Para adicionar uma condição, clique com botão direito no breakpoint já configurado → "Set condition" (ou veja em Debug → Breakpoints List → selecione o breakpoint → Edit). Você pode escrever uma condição em Lua que retorna true quando o breakpoint deve pausar: por exemplo, "EAX == 0" pausaria apenas quando o dano é zero, ou "readInteger(EBX+0x4C) < 20" pausaria apenas quando a vida cair abaixo de 20.
+        </p>
 
-        <h2>O que fazer quando o breakpoint é atingido</h2>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { acao: "Ver registradores", desc: "O painel direito mostra EAX, EBX, ECX... Você vê exatamente quais valores o código está operando." },
-            { acao: "Ver Stack", desc: "O painel inferior direito mostra a pilha de chamadas — você vê quais funções chamaram este código." },
-            { acao: "Modificar valores", desc: "Duplo clique em qualquer registrador para alterar seu valor antes de continuar." },
-            { acao: "Step Over (F8)", desc: "Executa a instrução atual e para na próxima. Não entra em funções chamadas." },
-            { acao: "Step Into (F7)", desc: "Executa a instrução atual. Se for CALL, entra na função chamada." },
-            { acao: "Run (F9)", desc: "Continua a execução normalmente até o próximo breakpoint." },
-          ].map((item) => (
-            <div key={item.acao} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="text-primary font-mono text-sm min-w-32 font-bold">{item.acao}</span>
-              <p className="text-sm text-muted-foreground">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <AlertBox type="warning" title="Breakpoints pausam o jogo inteiro">
-          Quando um breakpoint é atingido, todo o processo para. Em jogos online, isso pode causar timeout e desconexão. Use breakpoints apenas em jogos single-player ou em um ambiente seguro.
+        <AlertBox type="warning" title="Breakpoints pausam o processo inteiro, incluindo threads">
+          Quando um breakpoint é atingido, todos os threads do processo são pausados — não apenas o thread que atingiu o breakpoint. Em jogos online, isso causa imediatamente um timeout de conexão. Use breakpoints apenas em modo offline ou single-player.
         </AlertBox>
 
-        <AlertBox type="tip" title="Dica — Conditional Breakpoints">
-          No Cheat Engine, você pode adicionar uma condição ao breakpoint. Por exemplo: só pausar se EAX == 0 (quando o dano seria zero). Isso evita pausas desnecessárias quando a instrução é executada em outros contextos.
+        <AlertBox type="tip" title="Use Step Over (F8) extensivamente para entender o fluxo">
+          Depois de pausar num breakpoint, usar F8 repetidamente para avançar instrução por instrução é a melhor forma de entender o que um trecho de código faz. Observe como os valores dos registradores mudam a cada passo. É lento mas extremamente educativo, e é assim que profissionais de engenharia reversa trabalham.
         </AlertBox>
       </PageContainer>
     );

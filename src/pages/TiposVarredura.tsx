@@ -1,113 +1,120 @@
 import { PageContainer } from "@/components/layout/PageContainer";
   import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
   export default function TiposVarredura() {
     return (
       <PageContainer
         title="Tipos de Varredura"
-        subtitle="Conheça todos os filtros de busca do Cheat Engine e quando usar cada um para encontrar valores rapidamente."
+        subtitle="Guia completo de todos os filtros de busca do Cheat Engine — quando e como usar cada tipo para qualquer situação."
         difficulty="iniciante"
-        timeToRead="12 min"
+        timeToRead="18 min"
       >
+        <h2>Por que existem diferentes tipos de varredura?</h2>
         <p>
-          O Cheat Engine oferece vários tipos de varredura além do simples "Exact Value". Conhecer cada tipo é essencial para encontrar valores difíceis — como vida que você não sabe exatamente quanto é, ou valores que mudam de formas específicas.
+          Quando você abre o Cheat Engine e quer encontrar um valor na memória do jogo, a situação ideal seria sempre saber exatamente qual é esse valor — e o tipo "Exact Value" seria suficiente para tudo. Mas a realidade é bem mais complexa. A barra de HP pode não mostrar o número exato. A experiência pode ser representada como uma porcentagem. O tempo de recarga pode ser um float que você não consegue ler precisamente. O inventário pode ter valores que só aumentam ou só diminuem.
+        </p>
+        <p>
+          É por isso que o Cheat Engine oferece vários tipos de varredura — cada um projetado para uma situação específica. Dominar esses tipos é a diferença entre encontrar um valor em 5 minutos e lutar por horas sem resultado. Esta página explora cada tipo em profundidade, com exemplos práticos de quando usá-los.
         </p>
 
-        <h2>Tipos de Varredura Disponíveis</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Tipo</th>
-                <th className="p-3 text-left">Descrição</th>
-                <th className="p-3 text-left">Quando usar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Exact Value", "Busca exatamente o valor digitado", "Quando você sabe o valor exato (ex: 100 de vida)"],
-                ["Bigger than...", "Busca valores maiores que X", "Quando o valor é alto mas não sabe exato"],
-                ["Smaller than...", "Busca valores menores que X", "Quando o valor é baixo mas não sabe exato"],
-                ["Value between...", "Busca valores em um intervalo", "Quando sabe a faixa aproximada"],
-                ["Increased Value", "Valores que aumentaram desde a última scan", "Quando o valor subiu (ex: XP ganho)"],
-                ["Decreased Value", "Valores que diminuíram", "Quando o valor caiu (ex: vida perdida)"],
-                ["Changed Value", "Qualquer valor que mudou", "Quando não sabe a direção da mudança"],
-                ["Unchanged Value", "Valores que NÃO mudaram", "Para eliminar endereços que flutuam"],
-                ["Unknown Initial Value", "Primeira scan sem saber o valor", "Para valores completamente desconhecidos"],
-              ].map(([tipo, desc, quando], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-xs font-medium">{tipo}</td>
-                  <td className="p-3 text-sm">{desc}</td>
-                  <td className="p-3 text-muted-foreground text-xs">{quando}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h2>Exact Value — O Tipo Básico</h2>
+        <p>
+          O <strong>Exact Value</strong> é o tipo padrão e o mais intuitivo. Você sabe exatamente qual é o valor e o CE busca endereços que contêm precisamente aquele número. É o ponto de partida para qualquer cheat em que o jogo mostra o valor claramente na interface — barra de HP com número visível, quantidade de ouro exibida, nível do personagem, etc.
+        </p>
+        <p>
+          O workflow padrão com Exact Value: note o valor atual (ex: 100 de vida), faça First Scan com esse valor, cause uma mudança no jogo (tome dano, gaste ouro, ganhe XP), note o novo valor (ex: 75 de vida), faça Next Scan com o novo valor. Repita 3-5 vezes até sobrar apenas 1-3 endereços.
+        </p>
+        <p>
+          Um detalhe importante: o Exact Value é sensível ao tipo de dado. Se a vida está armazenada como Float mas você busca como 4 Bytes Integer, você não vai encontrar nada (ou vai encontrar endereços errados). Sempre experimente diferentes tipos de dados quando o Exact Value não produz bons resultados.
+        </p>
 
-        <h2>Estratégias de Varredura por Cenário</h2>
+        <h2>Bigger Than / Smaller Than — Quando Você Sabe a Faixa</h2>
+        <p>
+          Os tipos <strong>Bigger than</strong> e <strong>Smaller than</strong> são úteis quando você sabe aproximadamente qual é o valor mas não o número exato. Por exemplo, você está num RPG e sabe que seu personagem tem "muito ouro" — certamente mais de 1000, provavelmente mais de 5000, mas não sabe exatamente. Fazer uma busca "Bigger than 1000" já elimina bilhões de endereços irrelevantes que têm valores menores.
+        </p>
+        <p>
+          Outro caso de uso é quando você quer evitar endereços de sistema que armazenam valores de controle (geralmente 0, 1, ou valores muito altos como timestamps). Buscar "Bigger than 50 AND Smaller than 10000" restringe muito a busca a valores na faixa que faz sentido para a vida de um personagem.
+        </p>
+        <p>
+          Na prática, use Bigger/Smaller como primeiro filtro, depois refine com Changed/Unchanged ou Exact Value. Por exemplo: First Scan com "Bigger than 0" + "Smaller than 1000" para ouro → gaste algum ouro → Next Scan com "Smaller than [valor anterior]" → ganhe ouro → Next Scan com "Bigger than [valor anterior]".
+        </p>
 
-        <h3>Cenário 1: Valor que você sabe</h3>
-        <p>Use <strong>Exact Value</strong>. Digite o valor exato (ex: 100 de vida) e faça a primeira scan. Depois tome dano e faça Next Scan com o novo valor.</p>
+        <h2>Value Between — Intervalo Preciso</h2>
+        <p>
+          O <strong>Value Between</strong> combina Bigger than e Smaller than numa única operação. Você define um valor mínimo e um máximo, e o CE retorna apenas endereços dentro dessa faixa. É mais eficiente que fazer dois scans separados e é especialmente útil quando você sabe que o valor deve estar dentro de um intervalo específico.
+        </p>
+        <p>
+          Exemplo prático: em um jogo de corrida, a velocidade do carro varia entre 0 (parado) e 300 (velocidade máxima). Buscar "Value between 50 and 300" enquanto está dirigindo elimina imediatamente todos os zeros e valores fora do range. Depois de alguns Next Scans com o valor atual exato, você chega ao endereço de velocidade rapidamente.
+        </p>
+        <p>
+          Para floats, o Value Between é particularmente poderoso. Se você sabe que a barra de vida é representada como uma fração entre 0.0 e 1.0, buscar "Value between 0.0 and 1.0" (com tipo Float) retorna apenas endereços com valores percentuais, eliminando imediatamente a maior parte da memória irrelevante.
+        </p>
 
-        <h3>Cenário 2: Valor em porcentagem (barra de HP)</h3>
-        <p>Muitos jogos armazenam HP como float (0.0 a 1.0 = 0% a 100%). Experimente <strong>Value between 0.0 and 1.0</strong> com tipo Float, ou <strong>Exact Value</strong> com o valor decimal correto (ex: 0.75 para 75%).</p>
+        <h2>Unknown Initial Value — A Ferramenta para o Desconhecido</h2>
+        <p>
+          O <strong>Unknown Initial Value</strong> é o tipo mais poderoso — e o mais lento. Em vez de buscar um valor específico, ele simplesmente fotografa toda a memória do processo e armazena o estado atual. Nas varreduras seguintes, você compara o estado atual com o snapshot anterior para filtrar endereços baseado em como eles mudaram.
+        </p>
+        <p>
+          Use Unknown Initial Value quando você não sabe absolutamente nada sobre o valor que está buscando: não sabe se é inteiro ou float, não sabe a faixa, não vê o número na tela. A barra de HP sem número, um medidor visual sem unidade, um valor interno que o jogo não mostra ao jogador — todos são candidatos para Unknown Initial Value.
+        </p>
+        <p>
+          A desvantagem óbvia é o tamanho: um snapshot de processo pode ter vários gigabytes. O CE precisa de memória RAM suficiente para armazenar isso, e a varredura inicial leva mais tempo. Feche outros programas antes de usar Unknown Initial Value para garantir memória suficiente.
+        </p>
+        <p>
+          A estratégia com Unknown Initial Value é usar tipos relativos de comparação nas varreduras seguintes: "Changed Value" quando você sabe que o valor mudou mas não sabe como, "Unchanged Value" quando o valor não deveria ter mudado, "Increased Value" quando sabe que subiu, "Decreased Value" quando sabe que desceu.
+        </p>
 
-        <h3>Cenário 3: Placar que só sobe</h3>
-        <p>Use <strong>Unknown Initial Value</strong> → jogue um pouco → <strong>Increased Value</strong> → jogue mais → <strong>Increased Value</strong> novamente. Repita até poucos resultados.</p>
+        <h2>Changed / Unchanged Value</h2>
+        <p>
+          <strong>Changed Value</strong> filtra para endereços que tiveram qualquer mudança desde a última varredura. Não importa de quanto — qualquer diferença é suficiente para o endereço passar pelo filtro. Use após um período de atividade no jogo quando o valor que você busca certamente mudou mas você não sabe exatamente para quanto.
+        </p>
+        <p>
+          <strong>Unchanged Value</strong> é o oposto: filtra para endereços que permaneceram exatamente iguais desde a última varredura. Este é um dos tipos mais poderosos em combinação com outros — alternando entre Changed e Unchanged, você pode convergir para o endereço correto muito mais rapidamente do que usando apenas Exact Value.
+        </p>
+        <p>
+          A técnica clássica de alternância: (1) Unknown Initial Value, (2) faça o valor mudar → Next Scan "Changed", (3) não mexa no valor por alguns segundos → Next Scan "Unchanged", (4) faça o valor mudar de novo → Next Scan "Changed". Repita até poucos resultados. O valor alvo vai aparecer consistentemente nos dois filtros; valores aleatórios vão mudar de forma imprevisível e serão eliminados.
+        </p>
 
-        <h3>Cenário 4: Valor criptografado</h3>
-        <p>Alguns jogos multiplicam/somam uma chave ao valor. Use <strong>Unknown Initial Value</strong> e alterne entre <strong>Changed Value</strong> e <strong>Unchanged Value</strong> conforme o valor muda ou não no jogo.</p>
+        <h2>Increased / Decreased Value</h2>
+        <p>
+          <strong>Increased Value</strong> passa apenas endereços cujo valor aumentou desde a última varredura (qualquer aumento). <strong>Decreased Value</strong> passa apenas os que diminuíram. Esses tipos são mais precisos que Changed Value porque indicam a direção da mudança, o que elimina mais falsos positivos.
+        </p>
+        <p>
+          Exemplo: você está buscando o XP do personagem. XP só aumenta (você nunca perde XP). Então: Unknown Initial Value → ganhe algum XP → Next Scan "Increased Value" → ganhe mais XP → Next Scan "Increased Value". A cada ciclo, você elimina todos os endereços que não aumentaram, convergindo rápido para o XP.
+        </p>
+        <p>
+          O inverso: buscando a munição. Atire alguns tiros → "Decreased Value". Recarregue → "Increased Value". Atire mais → "Decreased Value". A munição vai aparecer consistentemente como o único valor que segue esse padrão preciso.
+        </p>
 
-        <AlertBox type="tip" title="Combine tipos para refinar mais rápido">
-          A técnica mais eficiente é alternar entre tipos. Por exemplo: Unknown Initial Value → tome dano → Decreased Value → cure-se → Increased Value → tome dano de novo → Decreased Value. Isso converge para o endereço correto muito mais rápido.
+        <h2>Increased / Decreased by Exact Value</h2>
+        <p>
+          Uma variação ainda mais poderosa: em vez de buscar qualquer aumento ou diminuição, você especifica a quantidade exata de mudança. Se você tomou exatamente 15 de dano, buscar "Decreased by exactly 15" vai filtrar para apenas os endereços que diminuíram exatamente 15 — um filtro muito mais restrito que simplesmente "Decreased".
+        </p>
+        <p>
+          Isso é extremamente útil em jogos onde você tem controle preciso sobre as ações. Se você sabe que gastou exatamente 50 de ouro em uma compra, "Decreased by 50" vai encontrar o endereço do ouro em uma ou duas varreduras, em vez das 5-10 que seriam necessárias com o método genérico.
+        </p>
+
+        <h2>Estratégias Combinadas — O Método Profissional</h2>
+        <p>
+          Os profissionais de engenharia reversa raramente usam apenas um tipo de varredura. A abordagem eficaz é combinar tipos para convergir rapidamente. Aqui estão algumas estratégias comprovadas:
+        </p>
+        <p>
+          <strong>Para HP/Vida:</strong> Exact Value com o HP atual → tome dano exato (atacar inimigo fraco) → Exact Value com novo HP → cure exato → Exact Value com HP curado. Em 3-4 ciclos você encontra o endereço.
+        </p>
+        <p>
+          <strong>Para valores ocultos (barra sem número):</strong> Unknown Initial Value → varie o valor intensamente (tome muito dano, cure muito) → Decreased → Increased → Decreased → Increased. 5-8 ciclos geralmente são suficientes.
+        </p>
+        <p>
+          <strong>Para floats (velocidade, posição):</strong> Unknown Initial Value → mova o personagem → Changed Value → pare completamente → Unchanged Value → mova novamente → Changed Value. Valores de posição vão mudar consistentemente com movimento e estabilizar quando parado.
+        </p>
+
+        <AlertBox type="tip" title="Combine tipos para convergência rápida">
+          A regra de ouro: nunca dependa de um único tipo de varredura. Combine Exact Value para refinamento final com Changed/Unchanged para eliminação rápida de ruído. A alternância sistemática entre "o valor mudou" e "o valor não mudou" é a técnica mais eficaz para qualquer tipo de valor.
         </AlertBox>
 
-        <h2>Opções Adicionais de Scan</h2>
-        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
-          {[
-            { opcao: "Writable", desc: "Busca apenas em regiões de memória que podem ser escritas. Recomendado ativar — exclui código executável." },
-            { opcao: "Executable", desc: "Busca em memória executável (código do programa). Ative apenas para cheats de código." },
-            { opcao: "Copy On Write", desc: "Inclui regiões de memória com copy-on-write. Raramente necessário para iniciantes." },
-            { opcao: "Hex", desc: "Interpreta o valor digitado como hexadecimal. Útil quando você sabe o valor em hex (ex: FF para 255)." },
-          ].map((item) => (
-            <div key={item.opcao} className="border border-border rounded-xl p-4 bg-card">
-              <h4 className="font-bold text-sm mb-1">{item.opcao}</h4>
-              <p className="text-xs text-muted-foreground">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <h2>Filtros de Região de Memória</h2>
-        <p>
-          Abaixo do tipo de scan, você pode filtrar por região de memória. Isso reduz o tempo de varredura e o número de resultados:
-        </p>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Região</th>
-                <th className="p-3 text-left">Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["All", "Varre toda a memória — mais lento, mais resultados"],
-                ["Heap", "Apenas objetos alocados dinamicamente — onde ficam dados de jogo"],
-                ["Stack", "Pilha de chamadas — valores temporários, raramente útil"],
-                ["Custom", "Define um range de endereços manualmente — mais rápido quando você sabe a região"],
-              ].map(([regiao, desc], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-sm">{regiao}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{desc}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <AlertBox type="info" title="Dica de Performance">
-          Restringir a varredura a regiões específicas pode reduzir o tempo de scan de 30 segundos para menos de 1 segundo. Se você já sabe que o valor fica no heap, selecione apenas essa região.
+        <AlertBox type="info" title="Desempenho das varreduras">
+          Unknown Initial Value é lento na primeira varredura mas rápido nas seguintes (compara com o snapshot). Exact Value é sempre rápido mas pode falhar se o tipo estiver errado. Para jogos grandes (mais de 2GB de RAM alocada), considere restringir a região de memória na aba de configurações do scan para acelerar tudo.
         </AlertBox>
       </PageContainer>
     );

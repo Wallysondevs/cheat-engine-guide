@@ -6,94 +6,77 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Primeira Varredura"
-        subtitle="Como realizar sua primeira varredura no Cheat Engine e encontrar o endereço de um valor no jogo."
+        subtitle="Como executar sua primeira varredura de memória com sucesso — escolhendo o tipo certo, o valor certo, e interpretando os resultados."
         difficulty="iniciante"
-        timeToRead="10 min"
+        timeToRead="15 min"
       >
+        <h2>Antes de Varrer — Preparação Essencial</h2>
         <p>
-          A varredura (scan) é o coração do Cheat Engine. Ela percorre toda a memória do processo em busca de valores que correspondem aos seus critérios. A primeira varredura estabelece a base — as próximas varreduras refinam até chegar ao endereço exato.
+          Uma varredura bem-sucedida começa antes de clicar em "First Scan". A preparação adequada evita os erros mais comuns e economiza muito tempo de frustração. Há três coisas a fazer antes de começar:
+        </p>
+        <p>
+          Primeiro, <strong>abra o jogo e chegue a um estado estável</strong>. Carregue um save existente ou comece um novo jogo e chegue ao ponto onde o valor que você quer modificar é relevante. Se você quer modificar ouro, certifique-se de que já há ouro para ver e o valor está estável (não está sendo ganho ou gasto no momento). Se quer a vida, esteja em combate ou espere com a vida num valor fixo.
+        </p>
+        <p>
+          Segundo, <strong>anote o valor exato</strong>. Pause o jogo se possível. Olhe para o número na tela: quantos exatamente? "100" ou "100.5"? Se há uma casas decimais, provavelmente é um float. Se é um número redondo, provavelmente é um inteiro. Quanto mais preciso você for ao anotar o valor, mais eficiente será a varredura.
+        </p>
+        <p>
+          Terceiro, <strong>anexe o CE ao processo correto</strong>. Clique no ícone de computador com lupa no CE (ou no menu File → Open Process). Uma lista de processos aparece. Encontre o processo do jogo — geralmente tem o nome do jogo ou do executável (.exe) na lista. Clique e selecione. O CE aparece agora "conectado" ao jogo.
         </p>
 
-        <h2>Configurando a Varredura</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Campo</th>
-                <th className="p-3 text-left">O que configurar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Value", "O valor que você quer buscar. Para vida = 100, digite 100."],
-                ["Scan Type", "Exact Value para valores exatos. Veja outros tipos na página Tipos de Varredura."],
-                ["Value Type", "4 Bytes para inteiros normais. Float para decimais. Veja Tipos de Dados."],
-                ["Hex", "Marque se quiser digitar o valor em hexadecimal (ex: FF para 255)."],
-              ].map(([campo, oq], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-sm">{campo}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{oq}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h2>Escolhendo o Tipo de Dado Correto</h2>
+        <p>
+          Esta é a escolha mais importante da First Scan. O tipo de dado determina como o CE interpreta os bytes na memória. Um byte com o valor 100 em Integer é 100. Os mesmos bytes interpretados como Float representam um número completamente diferente. Se você escolher o tipo errado, o CE não vai encontrar o endereço correto — não porque ele não existe, mas porque está procurando o padrão de bytes errado.
+        </p>
+        <p>
+          <strong>Regra prática para jogos:</strong> comece sempre com "4 Bytes" (inteiro de 32 bits). A grande maioria dos valores em jogos modernos são inteiros de 32 bits — vida, mana, ouro, nível, XP, munição, pontos. Se a varredura com 4 Bytes não produzir resultados convincentes (você refininou bastante mas os candidatos não respondem à modificação), então tente "Float" e depois "2 Bytes" (para jogos mais antigos ou simples).
+        </p>
+        <p>
+          Use Float quando o valor tem casas decimais. Use 1 Byte quando o valor é pequeno (0-255) e parece não ser encontrado como 4 Bytes. Use 8 Bytes para jogos modernos em 64 bits onde valores podem exceder os limites de 32 bits. Use Double para floats de alta precisão (raro em jogos, mais comum em software científico).
+        </p>
 
-        <h2>Realizando a Primeira Varredura</h2>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Anexe o CE ao processo", desc: "Clique no ícone de computador → selecione o jogo na lista de processos." },
-            { n: "2", passo: "Note o valor atual no jogo", desc: "Exemplo: sua vida está em 100. Este é o valor que você vai buscar." },
-            { n: "3", passo: "Configure o scan", desc: "Value Type: 4 Bytes, Scan Type: Exact Value, Value: 100." },
-            { n: "4", passo: "Clique em First Scan", desc: "O CE varre toda a memória. Pode retornar milhares de resultados — isso é normal." },
-            { n: "5", passo: "Mude o valor no jogo", desc: "Tome dano (agora a vida está em 90, por exemplo)." },
-            { n: "6", passo: "Clique em Next Scan com o novo valor", desc: "Digite 90 e clique Next Scan. O CE filtra apenas endereços que mudaram de 100 para 90." },
-            { n: "7", passo: "Repita até poucos resultados", desc: "Continue tomando dano e fazendo Next Scan. Em 3-5 ciclos, deve restar 1-3 endereços." },
-            { n: "8", passo: "Adicione à Address List", desc: "Selecione os endereços restantes e pressione Enter ou duplo clique." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <h2>Fazendo a First Scan</h2>
+        <p>
+          Com o processo anexado e os parâmetros configurados: no campo "Value" do CE, digite o número exato que você viu no jogo. Confirme que "Scan Type" está em "Exact Value" e o tipo de dado está correto. Clique "First Scan".
+        </p>
+        <p>
+          O CE varre toda a memória do processo em busca de endereços que contêm exatamente aquele valor. Após alguns segundos, uma lista de resultados aparece — geralmente com centenas de milhares de entradas. Isso é normal e esperado: muitos endereços aleatórios coincidentemente têm aquele número. O objetivo das varreduras seguintes é eliminar os falsos positivos.
+        </p>
+        <p>
+          Se a lista de resultados aparecer totalmente vazia (0 resultados), há um problema: ou o tipo de dado está errado, ou o valor que você anotou não está exatamente como você pensa, ou o jogo está ofuscando o valor. Nesse caso: tente outro tipo de dado, tente um valor próximo (se a vida é "100" exibida mas o jogo armazena "99" ou "101"), e use Unknown Initial Value se os outros falhem.
+        </p>
 
-        <h2>Exemplo Prático: Vida em um RPG</h2>
-        <CodeBlock
-          title="Passo a passo completo"
-          language="text"
-          code={`Situação: RPG com vida atual = 150/200
+        <h2>Refinando com Next Scans</h2>
+        <p>
+          Após a First Scan com muitos resultados, a fase de refinamento começa. O objetivo é fazer com que o valor alvo mude no jogo e então usar esse novo valor para filtrar os resultados.
+        </p>
+        <p>
+          <strong>Método controlado:</strong> Cause uma mudança exata e conhecida no valor. Para HP: tome uma quantidade específica de dano de um inimigo fraco (que você sabe que causa, digamos, 10 de dano exatamente). Para ouro: gaste uma quantia exata comprando algo. Para XP: mate um inimigo que dê uma quantidade fixa de XP. Agora você sabe o novo valor: se tinha 100 de HP e tomou 10 de dano, agora tem 90.
+        </p>
+        <p>
+          No CE, mude o campo de valor para o novo número (90) e clique "Next Scan". O CE mantém apenas os endereços que tinham o valor antigo E agora têm o novo valor. Esse filtro duplo elimina a maioria dos falsos positivos — endereços que coincidentemente tinham 100 antes mas não têm 90 agora (e vice-versa) são eliminados.
+        </p>
+        <p>
+          Repita: cause mais mudanças no jogo (tome mais dano, gaste mais ouro) e faça Next Scans com os novos valores. Em 3-5 ciclos, você deve chegar a 1-10 candidatos. Se após 10+ ciclos você ainda tem milhares de resultados, algo está errado — o jogo pode estar usando um tipo diferente de dado, ou o valor que você acha que está mudando não é realmente o que está armazenado naquele campo.
+        </p>
 
-  First Scan:  Exact Value, 4 Bytes, Value = 150
-  [5.234.891 resultados — normal!]
+        <h2>Identificando o Endereço Correto</h2>
+        <p>
+          Quando a lista está com poucos candidatos (1-10), é hora de identificar qual é o real. A técnica mais rápida: selecione todos os candidatos na lista de resultados com <kbd>Ctrl+A</kbd>, clique direito e "Change value of selected addresses" → defina um valor facilmente identificável como 9999. Volte ao jogo — qual mudou? O HP foi para 9999? Aquele é o endereço correto.
+        </p>
+        <p>
+          Se nenhuma mudança visível aconteceu: talvez o jogo tenha "corrigido" o valor imediatamente, ou talvez nenhum dos candidatos seja o verdadeiro endereço. Nesse caso, desfaça a mudança e continue refinando com mais Next Scans.
+        </p>
+        <p>
+          Se múltiplas coisas mudaram: você tem mais de um endereço real. Alguns valores têm cópias (mirrors) na memória. Você pode precisar de todos eles para um cheat completo, ou pode ser que alguns sejam variáveis de sistema coincidentes. Modifique um de cada vez para descobrir qual produz o efeito correto no jogo.
+        </p>
 
-  → Entre em combate, tome 30 de dano → vida = 120
-
-  Next Scan:  Exact Value, Value = 120
-  [143 resultados — bem menos!]
-
-  → Tome mais 20 de dano → vida = 100
-
-  Next Scan:  Exact Value, Value = 100
-  [3 resultados]
-
-  → Cure 50 de vida → vida = 150
-
-  Next Scan:  Exact Value, Value = 150
-  [1 resultado! ← este é o endereço]
-
-  Duplo clique → modifique para 9999 → vida infinita!`}
-        />
-
-        <AlertBox type="tip" title="Dica — Selecione Todos e Teste">
-          Quando restar entre 3 e 15 resultados, selecione todos (Ctrl+A) e adicione à lista. Modifique todos ao mesmo tempo para 9999 e veja qual valor muda no jogo — esse é o endereço correto.
+        <AlertBox type="tip" title="Máximo 5 resultados antes de adicionar à Address List">
+          Espere ter 1-5 candidatos antes de adicionar à Address List e testar. Com muitos candidatos, você vai modificar endereços aleatórios além do correto, possivelmente causando travamentos. Seja paciente com os Next Scans — cada um elimina uma grande quantidade de falsos positivos.
         </AlertBox>
 
-        <AlertBox type="info" title="Muitos resultados após várias scans?">
-          Se ainda restar centenas de resultados após 5+ varreduras, tente mudar o tipo de dado (Float, 2 Bytes, Double) ou use "Changed/Unchanged Value" em vez de valores exatos. O jogo pode usar um formato diferente.
+        <AlertBox type="warning" title="Não faça First Scan com o jogo carregando">
+          Fazer First Scan enquanto o jogo ainda está inicializando (tela de loading) resulta em varreduras de estado transitório — valores que estão sendo escritos e mudando rapidamente. Sempre espere o jogo estar completamente carregado e em estado estável antes de começar a varrer.
         </AlertBox>
       </PageContainer>
     );

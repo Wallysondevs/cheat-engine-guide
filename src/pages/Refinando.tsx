@@ -6,99 +6,66 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Refinando Resultados"
-        subtitle="Técnicas para reduzir rapidamente centenas de resultados até encontrar o endereço exato."
+        subtitle="Técnicas avançadas para reduzir milhares de candidatos para o endereço exato de forma eficiente."
         difficulty="iniciante"
-        timeToRead="12 min"
+        timeToRead="15 min"
       >
-        <AlertBox type="info" title="O Objetivo">
-          Após a primeira varredura você pode ter milhões de resultados. O refinamento progressivo filtra esses resultados até sobrar apenas o endereço correto.
+        <h2>O desafio de muitos resultados</h2>
+        <p>
+          Uma First Scan típica retorna dezenas de milhares ou centenas de milhares de resultados. Mesmo após alguns Next Scans, você pode ainda ter centenas de candidatos. O objetivo do refinamento é reduzir sistematicamente essa lista até chegar a 1-5 endereços que são claramente os corretos. Esta página apresenta todas as técnicas disponíveis para fazer isso de forma eficiente.
+        </p>
+
+        <h2>A Técnica Fundamental — Mudanças Controladas</h2>
+        <p>
+          A razão pela qual o refinamento funciona é simples: o valor que você busca muda de formas previsíveis baseadas em ações específicas que você controla. Falsos positivos — endereços que coincidentemente têm os mesmos valores — raramente seguem o mesmo padrão preciso. Então, quanto mais específicas e controladas forem as mudanças que você faz, mais rápido os falsos positivos são eliminados.
+        </p>
+        <p>
+          Em vez de simplesmente jogar o jogo e fazer Next Scans com novos valores aleatórios, a abordagem profissional é: causar mudanças exatas de quantidades conhecidas. Se você busca ouro e tem 100, compre exatamente um item de 17 de ouro. Agora você sabe que o ouro deveria ser 83. Busca por 83 após comprar exatamente 17 é muito mais discriminante do que buscar por um valor novo desconhecido.
+        </p>
+
+        <h2>Usando Mudanças Incrementais Alternadas</h2>
+        <p>
+          Uma técnica altamente eficaz: alterne entre aumentar e diminuir o valor de formas específicas. Se busca HP: tome 10 de dano (HP cai) → Next Scan com novo HP → cure 5 (HP sobe ligeiramente) → Next Scan → tome 20 de dano → Next Scan → cure totalmente → Next Scan. A alternância de direção com quantidades específicas elimina os endereços que apenas seguem uma tendência geral.
+        </p>
+
+        <h2>Filtrando por Tipo de Dado</h2>
+        <p>
+          Se após 10 Next Scans você ainda tem muitos resultados com um tipo de dado, tente mudar o tipo. Clique "New Scan" (para limpar), mude o tipo de dado (ex: de 4 Bytes para Float), e refaça o processo. Se o valor real é um Float e você estava buscando como Integer, todos os resultados anteriores eram falsos positivos. Com o tipo correto, você deve convergir muito mais rápido.
+        </p>
+        <p>
+          Um sinal de que o tipo está errado: você faz 15+ Next Scans mas a contagem de resultados não cai abaixo de 100-200. Com o tipo correto e mudanças controladas, geralmente chega a menos de 10 resultados em 5-8 scans. Persistência com o tipo errado nunca converge.
+        </p>
+
+        <h2>A Técnica de "Change Value Todos e Observar"</h2>
+        <p>
+          Com 10-20 candidatos restantes, você pode usar uma abordagem prática direta: selecione todos os candidatos na lista de resultados (<kbd>Ctrl+A</kbd>), clique direito → "Change value of selected addresses", defina um valor absurdo e fácil de identificar (como 9999). Volte ao jogo imediatamente e observe:
+        </p>
+        <p>
+          Se algo inesperado aconteceu (o jogo travou, uma barra ficou cheia, texto mudou), você identificou que pelo menos um dos candidatos é um endereço importante. Se a barra de HP ficou cheia — ótimo, é o HP! Se o jogo travou — você tocou em algo crítico; pressione Ctrl+Z (se disponível) ou reinicie e refine mais antes de modificar.
+        </p>
+        <p>
+          Se nada mudou no jogo, provavelmente nenhum dos candidatos é o endereço real — o valor real pode estar em outro formato. Desfaça as mudanças (se possível) e tente com um tipo diferente.
+        </p>
+
+        <h2>Restringindo a Região de Memória</h2>
+        <p>
+          Uma técnica menos conhecida: restringir a varredura a regiões específicas de memória pode eliminar muito ruído. Acesse as configurações de varredura (botão Scan Options ou o menu Memory Scan) e configure o range de memória. Em vez de varrer toda a memória do processo (0x00000000 a 0x7FFFFFFF em 32 bits), você pode varrer apenas o heap (onde objetos dinâmicos ficam) ou apenas o módulo principal.
+        </p>
+        <p>
+          Para a maioria dos valores de gameplay (vida, ouro, XP), eles ficam no heap — memória alocada dinamicamente. A stack (pilha) e o módulo principal (.text, .data) raramente contêm valores de gameplay persistentes. Restringir a varredura ao heap pode reduzir o tamanho da First Scan em 50-70%.
+        </p>
+
+        <h2>Usando a Filtragem "Between" para Refinamento</h2>
+        <p>
+          O tipo de scan "Value Between" pode ser usado não apenas na First Scan mas também em Next Scans. Se você sabe que o HP deveria estar entre 50 e 150 depois de uma sequência de combate, buscar "Value between 50 and 150" é muito mais restritivo que buscar "Exact Value 83" (que pode ser qualquer coisa que coincidentemente tem 83).
+        </p>
+
+        <AlertBox type="tip" title="Regra dos 10 scans">
+          Se após 10 Next Scans bem executados você ainda tem mais de 50 resultados, algo está errado — provavelmente o tipo de dado ou o valor inicial estão incorretos. Recomece com uma hipótese diferente (tipo diferente, abordagem de Unknown Initial Value) em vez de continuar com uma abordagem que claramente não está convergindo.
         </AlertBox>
 
-        <h2>Técnicas de Refinamento</h2>
-
-        <h3>1. Varreduras Repetidas com Novo Valor</h3>
-        <p>
-          A técnica mais básica: mude o valor no jogo, anote o novo valor, faça Next Scan. Repita até poucos resultados. Funciona para a maioria dos valores simples.
-        </p>
-        <CodeBlock
-          title="Fluxo de refinamento por valor exato"
-          language="text"
-          code={`Vida: 100 → First Scan: Exact Value 100
-  Tome dano (-20) → Vida: 80 → Next Scan: Exact Value 80
-  Tome dano (-15) → Vida: 65 → Next Scan: Exact Value 65
-  Cure (+35) → Vida: 100 → Next Scan: Exact Value 100
-  [Devem restar 1-3 endereços]`}
-        />
-
-        <h3>2. Filtrar por Intervalo de Memória</h3>
-        <p>
-          No painel de scan, você pode definir um intervalo de endereços para buscar (Start e Stop address). Valores de jogo geralmente ficam em regiões específicas da memória — experimentar intervalos menores acelera a busca.
-        </p>
-
-        <h3>3. Usar "Unchanged Value" Estrategicamente</h3>
-        <p>
-          Quando o valor que você busca não muda por um período, use Next Scan com "Unchanged Value" para eliminar endereços que flutuaram por outras razões.
-        </p>
-        <CodeBlock
-          title="Alternando Changed e Unchanged"
-          language="text"
-          code={`Tome dano → Next Scan: Decreased Value (muitos resultados)
-  Fique parado (não mude a vida) → Next Scan: Unchanged Value
-  Tome dano → Next Scan: Decreased Value
-  [Converge muito mais rápido do que só Decreased]`}
-        />
-
-        <h3>4. Ordenar por Endereço</h3>
-        <p>
-          Na lista de resultados, clique na coluna "Address" para ordenar. Endereços estáticos (que não mudam entre sessões) geralmente ficam em regiões mais altas da memória. Endereços de pilha e heap ficam em regiões mais baixas.
-        </p>
-
-        <h3>5. Verificar em Tempo Real</h3>
-        <p>
-          Quando restar menos de ~20 endereços, selecione todos (Ctrl+A) e adicione à lista de endereços. Observe quais valores mudam em sincronia com o que você está monitorando no jogo.
-        </p>
-
-        <h2>Filtros Avançados</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Técnica</th>
-                <th className="p-3 text-left">Como usar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Decreased by exact value", "Se você tomou exatamente 20 de dano, busque 'Decreased value by 20' — muito mais preciso que só 'Decreased'"],
-                ["Value between X and Y", "Quando sabe a faixa (ex: vida entre 50 e 80 após combate)"],
-                ["Filtrar por tipo de memória", "Marque apenas 'Writable' e desmarque 'Executable' — evita resultados em código do programa"],
-                ["Filtrar por região", "Use 'Start/Stop address' para limitar a busca a regiões específicas do executável"],
-              ].map(([tecnica, como], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-medium text-sm">{tecnica}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{como}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <AlertBox type="warning" title="Cuidado com Ponteiros Temporários">
-          Alguns endereços encontrados são temporários — mudam a cada reinicialização do jogo ou fase. Se o cheat parou de funcionar após reiniciar, você precisa aprender sobre <strong>ponteiros estáticos</strong> (próximo tópico).
-        </AlertBox>
-
-        <h2>Cenário: Muitos Resultados Persistem</h2>
-        <p>Se após 5+ varreduras ainda restar centenas de resultados, tente:</p>
-        <ul>
-          <li>Mudar o tipo de dados (tente Float se estava usando 4 Bytes)</li>
-          <li>Usar "Value between X and Y" com um intervalo mais estreito</li>
-          <li>Fechar outros programas para reduzir o "ruído" de memória</li>
-          <li>Verificar se o jogo usa valores criptografados</li>
-          <li>Usar "Decreased by exact amount" em vez de "Decreased"</li>
-        </ul>
-
-        <AlertBox type="tip" title="Dica de Eficiência">
-          Não se preocupe em ter muitos resultados nas primeiras 2-3 varreduras. O processo normal leva de 5 a 10 rodadas de refinamento para jogos típicos. Seja paciente e metódico.
+        <AlertBox type="info" title="Salve a lista de resultados intermediária">
+          Se você chegou a 50-100 bons candidatos após muito trabalho mas precisa parar e continuar depois, adicione todos os candidatos à Address List antes de fechar o CE. Mesmo sem saber qual é o correto, você preserva o progresso e pode continuar o refinamento na próxima sessão.
         </AlertBox>
       </PageContainer>
     );

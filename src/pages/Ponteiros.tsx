@@ -5,110 +5,83 @@ import { PageContainer } from "@/components/layout/PageContainer";
   export default function Ponteiros() {
     return (
       <PageContainer
-        title="O que são Ponteiros"
-        subtitle="Entenda a diferença entre endereços dinâmicos e estáticos, e por que ponteiros são essenciais para cheats permanentes."
+        title="Ponteiros e Endereços Dinâmicos"
+        subtitle="Entenda por que endereços mudam entre sessões e como usar ponteiros para criar cheats permanentes."
         difficulty="intermediário"
-        timeToRead="14 min"
+        timeToRead="16 min"
       >
-        <AlertBox type="info" title="Por que Ponteiros?">
-          Endereços encontrados por varredura simples mudam cada vez que o jogo é reiniciado. Ponteiros são a solução permanente: eles apontam para o endereço correto independentemente de onde o dado está na memória.
-        </AlertBox>
-
         <h2>O Problema dos Endereços Dinâmicos</h2>
         <p>
-          Quando um jogo cria um objeto (ex: o personagem do jogador), ele aloca memória dinamicamente. Cada vez que o jogo inicia, o sistema operacional pode alocar esse objeto em um endereço diferente.
+          Você passou 30 minutos encontrando o endereço da vida do personagem, fez o freeze, o cheat funcionou perfeitamente. No dia seguinte, abre o jogo, carrega sua tabela, e o endereço que era "Vida do Personagem" está mostrando lixo, ou o freeze está afetando algo completamente diferente. O cheat quebrou.
         </p>
         <p>
-          Por isso, o endereço <code>0x1A2B3C4D</code> que você encontrou hoje pode ser <code>0x2F9A1B3E</code> amanhã, e seu cheat não funciona mais.
+          Isso acontece porque a memória RAM é gerenciada pelo sistema operacional de forma dinâmica. Quando um jogo cria um objeto "personagem" na memória, o SO escolhe um bloco de bytes disponíveis para alocar. Na sessão de ontem, havia espaço livre em 0x1A2B3C00, então o personagem foi criado lá. Hoje, aquele espaço estava ocupado por outra coisa (talvez o SO carregou uma DLL diferente lá), então o personagem foi criado em 0x3F4A5B00. O endereço que você encontrou ontem aponta para uma região completamente diferente hoje.
         </p>
-
-        <h2>Como Ponteiros Funcionam</h2>
         <p>
-          Um ponteiro é um valor que contém o endereço de outro valor. Em vez de armazenar o endereço do dado diretamente, você armazena um endereço base (estático) que aponta para o dado.
+          Esse comportamento é chamado de "endereço dinâmico" — o valor muda entre execuções. Em contraste, "endereços estáticos" ficam sempre no mesmo lugar, geralmente porque são parte do próprio executável ou de seções de dados que sempre são mapeadas no mesmo offset do módulo.
         </p>
-        <CodeBlock
-          title="Conceito de Ponteiro"
-          language="pseudocode"
-          code={`Endereço Base (estático): 0x00400000
-  Valor em 0x00400000:      0x1A2B3C4D  ← esse é o endereço dinâmico da vida
 
-  Para chegar na vida:
-  [0x00400000] + offset = endereço da vida
-  [0x1A2B3C4D] = 100 (valor da vida atual)
-
-  Notação do CE: P→"game.exe"+0x400000 → +0x4C → [valor]`}
-        />
-
-        <h2>Offsets</h2>
+        <h2>Como Identificar um Endereço Dinâmico</h2>
         <p>
-          Geralmente os dados de um personagem ficam organizados em uma estrutura. O objeto do personagem pode estar em um endereço base, e a vida estará em <code>base + 0x4C</code>, a mana em <code>base + 0x50</code>, etc. Esses deslocamentos são chamados de <strong>offsets</strong>.
+          No Cheat Engine, endereços são coloridos para indicar seu tipo. <strong>Endereços verdes</strong> são estáticos — eles são expressos como "nome_do_modulo+offset" (ex: "game.exe+0x009E48") e esse offset é sempre o mesmo porque o offset dentro do módulo não muda. <strong>Endereços pretos</strong> são dinâmicos — são números absolutos como "0x1A2B3C4C" que mudam entre sessões.
         </p>
+        <p>
+          Se você adicionar um endereço dinâmico (preto) à Address List e salvar a tabela, ao reabrir o jogo e carregar a tabela, aquele endereço vai apontar para uma localização aleatória de memória. O valor mostrado será lixo ou zero, e modificá-lo pode não ter efeito ou pode travar o jogo.
+        </p>
+
+        <h2>Ponteiros — A Solução</h2>
+        <p>
+          Um ponteiro é um valor que contém o endereço de outro valor. Em vez de usar o endereço dinâmico 0x1A2B3C4C diretamente, você usa um endereço estático que contém o valor 0x1A2B3C00 (a base do objeto), e sabe que o dado que quer está em [0x1A2B3C00 + 0x4C]. Se a sessão seguinte criar o objeto em 0x3F4A5B00, o endereço estático vai automaticamente conter 0x3F4A5B00, e o ponteiro vai corretamente apontar para 0x3F4A5B00 + 0x4C.
+        </p>
+        <p>
+          O conceito é simples mas o processo de encontrar o ponteiro correto requer trabalho — o Pointer Scanner automatiza isso, mas você ainda precisa entender o que está fazendo para verificar e usar os resultados corretamente.
+        </p>
+
+        <h2>Como Ponteiros São Representados no CE</h2>
         <CodeBlock
-          title="Exemplo com Offset"
-          language="pseudocode"
-          code={`Base Pointer: [0x00400000] = 0x1A2B3C00  (muda toda sessão)
-
-  Vida:   [0x1A2B3C00 + 0x4C] = 100    (você precisa chegar aqui)
-  Mana:   [0x1A2B3C00 + 0x50] = 80
-  XP:     [0x1A2B3C00 + 0x60] = 1500
-
-  Ponteiro correto no CE:
-  "game.exe" + 0x009E48 → offset +0x4C → Vida`}
-        />
-
-        <h2>Endereços Estáticos vs Dinâmicos</h2>
-        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
-          {[
-            { cor: "Verde ✅ — Endereço Estático", itens: ["Sempre o mesmo endereço", "Fica em regiões de código/dados do executável", "Mostrado em verde no CE", "Funciona após reiniciar o jogo"] },
-            { cor: "Preto ❌ — Endereço Dinâmico", itens: ["Muda a cada sessão", "Fica no heap (memória dinâmica)", "Mostrado em preto no CE", "Inválido após reiniciar o jogo"] },
-          ].map((item) => (
-            <div key={item.cor} className="border border-border rounded-xl p-4 bg-card">
-              <div className="font-semibold text-sm mb-2">{item.cor}</div>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                {item.itens.map(i => <li key={i}>• {i}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <h2>Identificando o Endereço Base Estático</h2>
-        <CodeBlock
-          title="Como encontrar o endereço base de um objeto"
+          title="Notação de ponteiro no Cheat Engine"
           language="text"
-          code={`1. Encontre o endereço dinâmico do valor (ex: vida em 0x1A2B3C4C)
-  2. Clique direito → "Find out what writes to this address"
-  3. A instrução aparece: MOV [EBX+4C], EAX
-  4. EBX é o endereço do objeto (0x1A2B3C00)
-  5. Agora você precisa encontrar de onde EBX vem
-     — Use o debugger e step back para rastrear
+          code={`Ponteiro de 1 nível:
+  Endereço: "game.exe"+9E48
+  Offsets:  +4C
+  Interpretação: vá para game.exe+0x9E48, leia o endereço ali,
+                 some 0x4C, e esse é o endereço do seu valor.
 
-  Alternativa rápida: use o Pointer Scanner
-  (clique direito → Pointer scan for this address)`}
+  Ponteiro de 3 níveis:
+  Endereço: "game.exe"+9E48
+  Offsets:  +148, +64, +4C
+  Interpretação:
+  1. Leia o valor em game.exe+0x9E48  → chame de A
+  2. Leia o valor em A + 0x148        → chame de B
+  3. Leia o valor em B + 0x64         → chame de C
+  4. C + 0x4C é o endereço do seu dado
+
+  Na Address List: endereços com ponteiro aparecem em roxo/violeta
+  e o CE resolve a cadeia automaticamente a cada atualização.`}
         />
 
-        <h2>Validando um Ponteiro</h2>
+        <h2>Adicionando um Ponteiro Manualmente</h2>
         <p>
-          Após encontrar um ponteiro, valide-o:
+          Se você já sabe os offsets do ponteiro (por exemplo, copiou de uma tabela de outra pessoa ou obteve via Pointer Scanner), pode adicionar manualmente. Clique no botão azul "Add address manually" na Address List. Na janela, marque a checkbox "Pointer". Um campo para o endereço base aparece — escreva o endereço estático (ex: "game.exe+0x9E48"). Campos para offsets aparecem abaixo; clique no botão "+" para adicionar mais níveis. Preencha cada offset na ordem. Defina o tipo de dado (4 Bytes, Float, etc.) e clique OK.
         </p>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Adicione o ponteiro à Address List", desc: "O valor deve aparecer corretamente." },
-            { n: "2", passo: "Reinicie o jogo completamente", desc: "Feche e abra novamente." },
-            { n: "3", passo: "Verifique o valor", desc: "O valor ainda deve aparecer na Address List e ser o correto." },
-            { n: "4", passo: "Repita pelo menos 3 vezes", desc: "Se funcionar em todas as sessões, o ponteiro é válido e pode ser salvo na tabela." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <p>
+          O ponteiro aparece na Address List em roxo. Se o CE consegue resolver a cadeia e chegar a um endereço válido, o valor correto aparece. Se mostra "??" ou um número sem sentido, algum offset está errado, o jogo ainda não inicializou o objeto, ou o processo não está rodando.
+        </p>
 
-        <AlertBox type="tip" title="Identificando no CE">
-          Na lista de endereços do CE, endereços estáticos aparecem em <strong>verde</strong>. Endereços dinâmicos aparecem em <strong>preto</strong>. Ponteiros configurados aparecem em <strong>roxo</strong>. Se o seu endereço está preto, você precisa encontrar um ponteiro para ele.
+        <h2>Verificando se um Ponteiro é Válido</h2>
+        <p>
+          O processo de validação de ponteiro é simples mas crucial. Com o jogo rodando e o personagem carregado: o valor mostrado na Address List deve corresponder ao valor real no jogo. Modifique o valor — se a mudança se reflete no jogo, o ponteiro é válido para esta sessão.
+        </p>
+        <p>
+          Para confirmar que é permanente: feche completamente o jogo, reabra, carregue o save, e verifique novamente. Se o ponteiro ainda mostra o valor correto após o reinício, é um ponteiro estático válido. Repita esse teste 3-5 vezes para ter confiança.
+        </p>
+
+        <AlertBox type="tip" title="Ponteiros são o elemento mais valioso de uma tabela">
+          Uma tabela com ponteiros estáticos válidos funciona indefinidamente (até uma atualização do jogo que mude os offsets). Uma tabela com apenas endereços dinâmicos é descartável. Sempre que você criar uma tabela para compartilhar, invista tempo para descobrir os ponteiros estáticos — é o que torna a tabela verdadeiramente útil para outros.
+        </AlertBox>
+
+        <AlertBox type="warning" title="Ponteiros podem apontar para null (0x00000000)">
+          Se o objeto para o qual o ponteiro aponta ainda não foi criado (o jogo ainda está carregando, o personagem ainda não foi selecionado), o endereço base pode conter 0x00000000 — um ponteiro nulo. Tentar ler da posição 0x00000000 vai causar um erro. O CE exibe "??" nesses casos. Sempre verifique se o jogo está completamente carregado antes de usar ponteiros.
         </AlertBox>
       </PageContainer>
     );

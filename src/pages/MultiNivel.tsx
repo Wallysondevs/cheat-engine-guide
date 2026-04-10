@@ -6,89 +6,109 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Ponteiros Multi-Nível"
-        subtitle="Como mapear cadeias de ponteiros complexas — a chave para cheats permanentes em jogos modernos."
+        subtitle="Como mapear e usar cadeias de ponteiros aninhados — a técnica definitiva para cheats permanentes em jogos modernos."
         difficulty="intermediário"
-        timeToRead="12 min"
+        timeToRead="18 min"
       >
+        <h2>De um nível a vários — a realidade dos objetos de jogo</h2>
         <p>
-          Ponteiros multi-nível são cadeias de referências onde você precisa seguir múltiplos ponteiros até chegar ao valor alvo. Jogos modernos organizam seus dados em objetos aninhados — e você precisa seguir toda a cadeia.
+          Um ponteiro de nível único funciona assim: existe um endereço estático A que contém um endereço B, e em B+offset está seu dado. Simples. Mas jogos modernos raramente organizam seus dados tão simplesmente. Eles têm gerenciadores de cena, gerenciadores de entidades, controladores de personagem, componentes de stats — cada um apontando para o próximo numa cadeia. Para chegar à vida do personagem, talvez você precise seguir 4, 5 ou até 7 níveis de ponteiros.
+        </p>
+        <p>
+          Por exemplo: o módulo game.exe tem um ponteiro estático para o GameManager. O GameManager tem um campo que aponta para o PlayerController. O PlayerController tem um campo que aponta para o PlayerStats. O PlayerStats tem um campo que é a vida atual. Para chegar à vida, você segue: [game.exe+0x009E48] → [resultado+0x148] → [resultado+0x64] → [resultado+0x4C] = vida.
+        </p>
+        <p>
+          Isso pode parecer complicado, mas é a estrutura normal de código orientado a objetos. O Cheat Engine lida com isso perfeitamente — e o Pointer Scanner automatiza a descoberta dessas cadeias.
         </p>
 
-        <h2>Por que Múltiplos Níveis?</h2>
+        <h2>Notação de Ponteiros Multi-Nível no CE</h2>
         <p>
-          Imagine a estrutura de um RPG: o GameManager aponta para o PlayerController, que aponta para o PlayerStats, que contém a vida. Para chegar à vida, você segue três ponteiros.
+          O Cheat Engine usa uma notação consistente para representar cadeias de ponteiros. Entender essa notação é essencial para ler tabelas de outros e para configurar ponteiros manualmente.
         </p>
         <CodeBlock
-          title="Exemplo de cadeia multi-nível"
+          title="Notação de ponteiro multi-nível no CE"
           language="pseudocode"
-          code={`Endereço base estático: 0x006A9E48  (fica no módulo do executável)
-  [0x006A9E48] = 0x12C40000              → ponteiro para GameManager
+          code={`; Exemplo com 4 níveis:
+  ; Base estática: "game.exe"+0x009E48
+  ; Seguindo os ponteiros:
+  ; Nível 1: [[game.exe+0x009E48] + 0x148]  ← GameManager
+  ; Nível 2: [[[game.exe+0x009E48] + 0x148] + 0x64]  ← PlayerController  
+  ; Nível 3: [[[[game.exe+0x009E48] + 0x148] + 0x64] + 0x4C]  ← Vida
 
-  [0x12C40000 + 0x148] = 0x23F80200     → ponteiro para PlayerController
-
-  [0x23F80200 + 0x64] = 0x34A12400      → ponteiro para PlayerStats
-
-  [0x34A12400 + 0x4C] = 100             → VIDA DO JOGADOR ✓
-
-  Notação do CE:
-  [[[[0x006A9E48] + 0x148] + 0x64] + 0x4C]`}
+  ; Como o CE exibe na Address List:
+  ; Endereço: P→P→P→P→"game.exe"+9E48
+  ; Com offsets: [+148][+64][+4C]
+  ; 
+  ; Cada "P→" representa um nível de desreferenciamento (ler o endereço apontado)`}
         />
 
-        <h2>Encontrando Ponteiros Multi-Nível</h2>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Encontre o endereço do valor alvo", desc: "Varredura normal — encontre onde a vida está armazenada agora." },
-            { n: "2", passo: "Execute o Pointer Scanner", desc: "Clique com botão direito → Pointer scan. Defina Max Level = 5 a 7." },
-            { n: "3", passo: "Reinicie o jogo e refine", desc: "Feche, abra o jogo novamente. Encontre o novo endereço da vida. Rescan no Pointer Scanner." },
-            { n: "4", passo: "Repita o refinamento", desc: "Quanto mais vezes repetir, mais confiável o ponteiro. Mínimo 3 vezes." },
-            { n: "5", passo: "Valide o ponteiro", desc: "Adicione o ponteiro à Address List e reinicie mais uma vez para confirmar." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <h2>Configurando um Ponteiro Multi-Nível Manualmente</h2>
+        <p>
+          Às vezes o Pointer Scanner retorna a cadeia correta mas você quer adicioná-la manualmente à Address List (por exemplo, ao recriar uma tabela depois de um update do jogo onde você sabe que apenas um offset mudou). O processo é:
+        </p>
+        <p>
+          Clique no botão "Add address manually" (ícone + azul) na parte inferior da Address List. Na janela que abre, marque a caixa "Pointer". Um campo aparece para o endereço base — escreva o endereço estático em formato "nome_do_módulo"+offset, como "game.exe+0x9E48". Abaixo, aparecem campos para adicionar offsets — clique no "+" para adicionar mais níveis. Preencha os offsets na ordem: 0x148, 0x64, 0x4C para o exemplo acima. Selecione o tipo de dado (4 Bytes para vida inteira, Float para vida decimal). Clique OK.
+        </p>
+        <p>
+          O endereço aparece na Address List com cor roxa/violeta, indicando que é um ponteiro. O valor exibido é o resultado de seguir toda a cadeia — se está correto, você verá a vida atual do personagem. Se está mostrando 0 ou um valor sem sentido, algum offset está errado.
+        </p>
 
-        <h2>Adicionando Ponteiro Multi-Nível Manualmente</h2>
+        <h2>Depurando Ponteiros Quebrados</h2>
+        <p>
+          Quando um ponteiro multi-nível não funciona (mostra valor errado ou "??"), é necessário inspecionar cada nível individualmente para identificar onde a cadeia quebra. O processo de diagnóstico é o seguinte:
+        </p>
+        <p>
+          Comece com o endereço base: abra o Memory View (Ctrl+M) e navegue para o endereço base estático. Leia os bytes lá — esses bytes formam o endereço do próximo nível. Converta de little-endian (como os bytes aparecem na memória) para o endereço. Vá para esse endereço. Continue seguindo a cadeia manualmente até o ponto onde o valor não faz sentido — esse nível está com o offset errado ou o ponteiro foi invalidado por uma atualização do jogo.
+        </p>
         <CodeBlock
-          title="Adicionar ponteiro manualmente na Address List"
-          language="text"
-          code={`1. Na Address List, clique em "Add address manually" (ícone +)
-  2. Na janela que abre, marque "Pointer"
-  3. No campo "Pointer", digite o endereço base estático (ex: "game.exe"+0x009E48)
-  4. Adicione os offsets: 0x148, 0x64, 0x4C
-     (cada linha de offset é um nível de desreferenciamento)
-  5. Selecione o tipo (ex: 4 Bytes)
-  6. Clique OK — o endereço aparece em roxo na lista`}
+          title="Depurando ponteiro level por level via Lua"
+          language="lua"
+          code={`-- Depurar uma cadeia de ponteiros nível por nível
+  local base = getAddress("game.exe") + 0x9E48
+
+  -- Nível 1
+  local lvl1 = readInteger(base)
+  print("Nível 0 (base): " .. string.format("0x%X", base))
+  print("Nível 1 (após deref): " .. string.format("0x%X", lvl1))
+  if lvl1 == 0 then print("ERRO: ponteiro nulo no nível 1!") return end
+
+  -- Nível 2
+  local lvl2 = readInteger(lvl1 + 0x148)
+  print("Nível 2 (após +0x148): " .. string.format("0x%X", lvl2))
+  if lvl2 == 0 then print("ERRO: ponteiro nulo no nível 2! Offset 0x148 pode estar errado.") return end
+
+  -- Nível 3
+  local lvl3 = readInteger(lvl2 + 0x64)
+  print("Nível 3 (após +0x64): " .. string.format("0x%X", lvl3))
+  if lvl3 == 0 then print("ERRO: ponteiro nulo no nível 3! Offset 0x64 pode estar errado.") return end
+
+  -- Valor final
+  local vida = readInteger(lvl3 + 0x4C)
+  print("Vida encontrada: " .. vida)`}
         />
 
-        <h2>Notação de Ponteiro no CE</h2>
-        <CodeBlock
-          title="Como o CE exibe ponteiros multi-nível"
-          language="text"
-          code={`Nível 1 (simples):
-  P→"game.exe"+0x9E48
+        <h2>A Questão dos Offsets Após Updates</h2>
+        <p>
+          O cenário mais frustrante no trabalho com ponteiros multi-nível é quando o jogo é atualizado e os ponteiros param de funcionar. O endereço base estático geralmente ainda funciona, mas um ou mais offsets mudaram porque a estrutura interna dos objetos foi reorganizada.
+        </p>
+        <p>
+          A abordagem para recuperar um ponteiro quebrado após update: use o Dissect Data/Structures do CE. Após encontrar o novo endereço do valor por varredura, use a ferramenta de dissect no nível imediatamente acima para mapear os campos do objeto. Compare com o mapeamento antigo para identificar qual offset mudou. Frequentemente é uma diferença de 4-8 bytes porque o compilador adicionou ou removeu um campo no meio da estrutura.
+        </p>
 
-  Nível 2:
-  P→P→"game.exe"+0x9E48 + 0x148
+        <h2>Ponteiros Multi-Nível em Tabelas Profissionais</h2>
+        <p>
+          As melhores tabelas da comunidade (como as do FearLess Cheat Engine) frequentemente incluem comentários explicando a estrutura dos ponteiros. Um comentário típico seria algo como: "Base → GameManager → LocalPlayer → HealthComponent → MaxHealth". Isso não é apenas por documentação — é para facilitar a atualização quando o jogo muda.
+        </p>
+        <p>
+          Quando você entende a lógica por trás da cadeia (que objeto cada nível representa), descobrir um novo offset após uma atualização é muito mais rápido. Em vez de refazer tudo do zero, você sabe que precisa verificar apenas o offset no nível do HealthComponent e pode confirmar rapidamente qual é o novo offset correto.
+        </p>
 
-  Nível 3:
-  P→P→P→"game.exe"+0x9E48 + 0x148 + 0x64
-
-  Nível 4 (exemplo da vida):
-  P→P→P→P→"game.exe"+0x9E48 + 0x148 + 0x64 + 0x4C`}
-        />
-
-        <AlertBox type="warning" title="Ponteiros se quebram com atualizações do jogo">
-          Quando o jogo é atualizado, os offsets frequentemente mudam. Você precisará refazer o processo de pointer scanning após cada atualização significativa.
+        <AlertBox type="tip" title="Use o Pointer Scanner, não tente adivinhar os offsets">
+          Com mais de 2 níveis de ponteiros, tentar descobrir os offsets manualmente é extremamente tedioso. O Pointer Scanner automatiza isso. Mesmo que você conheça a teoria dos ponteiros multi-nível, use o scanner para encontrar os offsets — é a ferramenta certa para isso.
         </AlertBox>
 
-        <AlertBox type="tip" title="Dica — Use o Dissect Data Structure">
-          Após encontrar o endereço base de um objeto, use o menu Tools → Dissect data/structures para mapear automaticamente todos os offsets em volta. O CE analisa quais offsets têm valores que mudam e ajuda a identificar o que cada um representa.
+        <AlertBox type="info" title="Ponteiros de nível 5+ são mais frágeis">
+          Cadeias com 5 ou mais níveis têm mais pontos de falha — cada nível é uma oportunidade para um offset mudar num update. Se o Pointer Scanner encontrar resultados com poucos e muitos níveis, prefira os de poucos níveis para suas tabelas. Mais simples = mais robusto.
         </AlertBox>
       </PageContainer>
     );

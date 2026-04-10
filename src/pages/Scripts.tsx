@@ -6,116 +6,121 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Scripts no Cheat Engine"
-        subtitle="Como criar scripts Auto Assembler e Lua para cheats avançados e automatizados."
+        subtitle="Como criar e usar scripts na Address List — de simples Lua a injeções complexas de Auto Assembler."
         difficulty="intermediário"
-        timeToRead="14 min"
+        timeToRead="16 min"
       >
+        <h2>Scripts vs Freeze de Valor</h2>
         <p>
-          O Cheat Engine suporta dois tipos de scripts: <strong>Auto Assembler</strong> (scripts de código Assembly com sintaxe simplificada) e <strong>Lua</strong> (linguagem de script de alto nível). Cada um tem seus casos de uso.
+          O Freeze simples é a ferramenta certa quando você quer manter um valor constante. Mas há situações onde freeze não é suficiente: quando você quer que o valor responda dinamicamente a eventos do jogo, quando quer modificar o comportamento em vez do valor, quando precisa de lógica condicional, ou quando quer criar interfaces mais ricas. Para tudo isso, scripts são a solução.
+        </p>
+        <p>
+          Um script no contexto do Cheat Engine é um pedaço de código que é executado quando você ativa um Memory Record (checkbox). Esse código pode ser Lua (para lógica de alto nível) ou Auto Assembler (para injeção de código Assembly no processo). Cada Memory Record pode ter seu próprio script associado.
         </p>
 
-        <h2>Auto Assembler vs Lua</h2>
-        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
-          {[
-            {
-              tipo: "Auto Assembler",
-              desc: "Injeta código diretamente no processo do jogo. Usado para modificar comportamentos a nível de CPU — ignorar dano, alterar cálculos, etc. Mais poderoso mas mais complexo.",
-              casos: "Code Injection, AOB Patch, NOP de instruções",
-            },
-            {
-              tipo: "Lua",
-              desc: "Linguagem de alto nível que controla o CE via API. Usado para automatizar ações, criar UIs, gerenciar múltiplos endereços e criar trainers completos.",
-              casos: "Trainers, automação, UI personalizada, lógica condicional",
-            },
-          ].map((item) => (
-            <div key={item.tipo} className="border border-border rounded-xl p-4 bg-card">
-              <h4 className="font-bold text-sm mb-2 text-primary">{item.tipo}</h4>
-              <p className="text-xs text-muted-foreground mb-2">{item.desc}</p>
-              <p className="text-xs font-medium">Casos: <span className="text-muted-foreground">{item.casos}</span></p>
-            </div>
-          ))}
-        </div>
-
-        <h2>Script Auto Assembler Básico</h2>
+        <h2>Scripts Lua em Memory Records</h2>
+        <p>
+          Para associar um script Lua a um Memory Record: duplo clique no endereço na Address List para abrir o editor. Você verá abas — na aba "Script", você pode escrever código Lua. Quando o checkbox do registro for marcado, o bloco entre "[ENABLE]" e "[DISABLE]" é executado. Quando desmarcado, o bloco DISABLE executa.
+        </p>
         <CodeBlock
-          title="Estrutura básica de um script AA"
-          language="asm"
-          code={`[ENABLE]
-  // Esta seção executa quando o script é ativado
+          title="Estrutura de um script Lua em Memory Record"
+          language="lua"
+          code={`{$lua}
+  [ENABLE]
+  -- Este código roda quando você ativa o checkbox
 
-  // Alocar nova memória para nosso código
-  alloc(meuCodigo, 256)
+  -- Exemplo: God Mode com timer automático
+  local HP_ADDR = "game.exe+0x9E48"
+  local HP_MAX = 100
 
-  label(voltarAqui)
-
-  // Endereço onde vamos injetar
-  // Substitua pelo endereço real encontrado no debugger
-  originalAddress:
-    jmp meuCodigo      // pula para nosso código
-    nop 2              // preenche espaço (instrução original era 5 bytes)
-
-  meuCodigo:
-    // Coloque aqui o que quiser fazer
-    // Exemplo: ignorar a instrução de dano
-    
-    jmp voltarAqui    // retorna ao fluxo normal
+  -- Freeze de vida via Lua (alternativa ao freeze nativo)
+  godModeTimer = createTimer(nil, false)
+  godModeTimer.Interval = 100  -- verifica a cada 100ms
+  godModeTimer.OnTimer = function()
+    if readInteger(HP_ADDR) < HP_MAX then
+      writeInteger(HP_ADDR, HP_MAX)
+    end
+  end
+  godModeTimer.Enabled = true
+  print("God Mode ativado!")
 
   [DISABLE]
-  // Esta seção executa quando o script é desativado
-  // Restaura os bytes originais
-  originalAddress:
-    db ?? ?? ?? ?? ??  // bytes originais (CE preenche automaticamente)
-    
-  dealloc(meuCodigo)`}
+  -- Este código roda quando você desativa o checkbox
+  if godModeTimer then
+    godModeTimer.Enabled = false
+    godModeTimer.Destroy()
+    godModeTimer = nil
+  end
+  print("God Mode desativado.")`}
         />
+        <p>
+          A vantagem desse padrão é que você pode ter lógica complexa no ENABLE (criação de timers, hooks, interfaces) e limpeza no DISABLE. O CE cuida de chamar o código certo dependendo do estado do checkbox.
+        </p>
 
-        <h2>Scripts Lua Essenciais</h2>
+        <h2>Scripts Auto Assembler em Memory Records</h2>
+        <p>
+          Para cheats que precisam modificar o código do jogo (não apenas valores na memória), o Auto Assembler é a ferramenta correta. O fluxo típico: você identifica a instrução que precisa modificar via disassembler, escreve um script AA que redireciona o fluxo de execução para código injetado, e associa esse script a um Memory Record.
+        </p>
         <CodeBlock
-          title="Operações comuns em Lua"
+          title="Script Auto Assembler básico para anular dano"
+          language="asm"
+          code={`[ENABLE]
+  // Localizado via "Find out what writes to this address"
+  // Original: SUB ECX, EAX  // subtrai dano da vida
+  // Modificação: transformar em NOP para anular o dano
+
+  // Método 1: NOP simples (mais fácil)
+  GAME_EXE+001F22C:
+    nop
+    nop
+    nop  // ocupa o mesmo espaço que SUB ECX, EAX (3 bytes)
+
+  [DISABLE]
+  // Restaurar bytes originais
+  GAME_EXE+001F22C:
+    db 2B C8  // SUB ECX, EAX em bytes hex
+    nop       // padding se necessário`}
+        />
+        <p>
+          Esse script simples usa o endereço de memória onde a instrução de dano está, e quando ativado substitui por NOPs. Quando desativado, restaura os bytes originais. A chave é sempre manter os bytes originais para poder restaurar corretamente.
+        </p>
+
+        <h2>Gerenciando Múltiplos Scripts</h2>
+        <p>
+          Tabelas profissionais têm vários scripts, cada um responsável por um aspecto diferente. Organizar bem esses scripts é crucial para manutenção. Use grupos na Address List para agrupar scripts relacionados. Use nomes descritivos que indicam o que o script faz e como funciona. Adicione comentários no código explicando o raciocínio por trás de cada decisão.
+        </p>
+        <p>
+          Um padrão de nomenclatura útil: prefixe scripts com o tipo — "[AA] God Mode", "[Lua] Auto Heal", "[Pointer] Player Base". Isso deixa claro de relance qual tipo de script cada registro contém, o que é importante quando você volta a uma tabela semanas depois.
+        </p>
+
+        <h2>Debugging de Scripts</h2>
+        <p>
+          Quando um script não funciona como esperado, o Lua Console do CE é seu melhor amigo. Acesse em View → Lua Engine (ou Ctrl+Alt+L). Você pode executar código Lua interativamente — testar funções, verificar valores de endereços, experimentar lógicas novas. É muito mais rápido para debug do que editar o script no Memory Record, salvar, e testar.
+        </p>
+        <CodeBlock
+          title="Técnicas de debugging no Lua Console"
           language="lua"
-          code={`-- Ler um valor da memória
-  local vida = readInteger("game.exe+0x0012A3B0")
-  print("Vida: " .. vida)
+          code={`-- Verificar se um endereço é válido antes de usar
+  local addr = getAddress("game.exe") + 0x9E48
+  print(string.format("Endereço: 0x%X", addr))
 
-  -- Escrever um valor na memória
-  writeInteger("game.exe+0x0012A3B0", 9999)
+  -- Ler e mostrar valor
+  local valor = readInteger(addr)
+  print("Valor atual: " .. valor)
 
-  -- Ler/escrever float
-  local velocidade = readFloat("game.exe+0x0045B200")
-  writeFloat("game.exe+0x0045B200", 50.0)
+  -- Testar se o processo está correto
+  print("Processo: " .. process)
 
-  -- Trabalhar com ponteiros
-  local base = readInteger("game.exe+0x00A2B4C0")
-  local vidaAddr = base + 0x4C
-  local vidaAtual = readInteger(vidaAddr)
-  print("Vida via ponteiro: " .. vidaAtual)
-  writeInteger(vidaAddr, 9999)
-
-  -- Ativar um script na Address List
-  local mr = getAddressList().getMemoryRecordByDescription("Vida Infinita")
-  mr.Active = true`}
+  -- Ver todos os módulos carregados
+  local enumMod = enumModules()
+  for i, mod in ipairs(enumMod) do
+    print(mod.Name .. " @ 0x" .. string.format("%X", mod.Address))
+    if i > 10 then print("..."); break end  -- limita output
+  end`}
         />
 
-        <h2>Adicionando Scripts a Endereços da Tabela</h2>
-        <CodeBlock
-          title="Como adicionar script a um Memory Record"
-          language="text"
-          code={`1. Na Address List, selecione um endereço
-  2. Clique com botão direito → "Set script"
-  3. Ou: duplo clique no endereço → aba "Script"
-
-  Quando o checkbox for marcado → script [ENABLE] executa
-  Quando desmarcado → script [DISABLE] executa
-
-  Isso permite criar cheats complexos que respondem ao checkbox`}
-        />
-
-        <AlertBox type="info" title="Auto Assembler: aobscanmodule">
-          Use <code>aobscanmodule</code> em vez de endereços absolutos para scripts que devem funcionar em diferentes versões do jogo. O CE busca o padrão de bytes na memória, tornando o script mais robusto.
-        </AlertBox>
-
-        <AlertBox type="tip" title="Teste Scripts no Console Lua">
-          Antes de adicionar um script a uma tabela, teste no console Lua (menu Lua → Lua Engine). Você pode executar código Lua interativamente e ver os resultados imediatamente sem riscos.
+        <AlertBox type="tip" title="Sempre teste no Lua Console antes de colocar no script">
+          O Lua Console permite experimentação rápida sem o ciclo de editar/salvar/testar. Quando você descobrir que o código funciona no console, aí copie para o Memory Record. Isso reduz drasticamente o tempo de debugging.
         </AlertBox>
       </PageContainer>
     );

@@ -5,123 +5,145 @@ import { PageContainer } from "@/components/layout/PageContainer";
   export default function Templates() {
     return (
       <PageContainer
-        title="Templates de Scripts"
-        subtitle="Como usar e criar templates reutilizáveis no Cheat Engine para acelerar o desenvolvimento."
+        title="Templates e Scripts Reutilizáveis"
+        subtitle="Como criar, organizar e reutilizar padrões de scripts no Cheat Engine para acelerar o desenvolvimento de cheats."
         difficulty="intermediário"
-        timeToRead="10 min"
+        timeToRead="15 min"
       >
+        <h2>O valor da reutilização no desenvolvimento de cheats</h2>
         <p>
-          Templates no Cheat Engine são modelos pré-configurados de scripts e tabelas que você pode reutilizar em diferentes projetos. Eles evitam reescrever código comum e padronizam a estrutura dos seus cheats.
+          Quando você cria cheats para múltiplos jogos, rapidamente percebe que certos padrões se repetem: o código para encontrar ponteiros multi-nível, a estrutura básica de um God Mode script, a função Lua para criar uma interface de controle, os patterns de AOB scan. Em vez de reescrever isso do zero para cada jogo, criar templates e scripts reutilizáveis economiza horas de trabalho.
+        </p>
+        <p>
+          Templates no contexto do Cheat Engine são arquivos .CT parcialmente preenchidos (ou scripts Lua/AA) que funcionam como ponto de partida, precisando apenas que você preencha os endereços e offsets específicos do jogo alvo. É a mesma filosofia de "não reinvente a roda" aplicada ao desenvolvimento de cheats.
         </p>
 
-        <h2>Templates de Auto Assembler</h2>
-        <p>
-          O Auto Assembler do CE oferece templates prontos para operações comuns. Acesse via Ctrl+A → Template:
-        </p>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Template</th>
-                <th className="p-3 text-left">Para que serve</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Cheat Table Framework Code", "Estrutura base para uma tabela completa com ativação/desativação"],
-                ["Code Injection", "Template para injetar código Assembly em um endereço específico"],
-                ["AOB Injection", "Injeção usando Array of Bytes (mais resistente a updates do jogo)"],
-                ["Full Injection", "Injeção completa com save/restore de registradores"],
-                ["Lua Script", "Template básico de script Lua com estrutura de enable/disable"],
-              ].map(([template, para], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-sm">{template}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{para}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2>Template de Code Injection</h2>
+        <h2>Template Básico de God Mode (Auto Assembler)</h2>
         <CodeBlock
-          title="Template padrão de Code Injection"
+          title="Template de God Mode via Code Injection"
           language="asm"
           code={`[ENABLE]
-  aobscanmodule(INJECT,game.exe,FF 83 4C 00 00 00 ??) // ENCONTRAR
-  alloc(newmem,$1000,"game.exe"+0)
+  // Encontre o endereço onde o dano é aplicado via "Find what writes"
+  // e substitua GAME_EXE e ADDR_APLICA_DANO com os valores reais
 
-  label(code)
-  label(return)
+  define(GAME_EXE, game.exe)
+  define(ADDR_APLICA_DANO, GAME_EXE+FFFFFF)  // ← substitua com endereço real
 
-  newmem:
-  code:
-    // Seu código personalizado aqui
-    // Exemplo: ignorar o dano
-    // jmp return  (pular a instrução original)
-    
-    // OU: executar a instrução original e depois seu código:
-    // [instrução original copiada]
-    
-    jmp return
+  alloc(godModeCode, 128, ADDR_APLICA_DANO)
+  label(godModeOriginal)
+  label(godModeReturn)
 
-  INJECT:
-    jmp newmem
-    nop 2
-  return:
-  registersymbol(INJECT)
+  godModeCode:
+    // Adicione aqui o código original que você sobrescreveu:
+    // (copie do disassembler — as instruções que você "pisou")
+    // mov [ebx+4C], ecx  // EXEMPLO — use o código real do seu jogo
+  godModeOriginal:
+    jmp godModeReturn
+
+  ADDR_APLICA_DANO:
+    jmp godModeCode
+    nop
+
+  godModeReturn:
 
   [DISABLE]
-  INJECT:
-    db [bytes originais]
-  unregistersymbol(INJECT)
-  dealloc(newmem)`}
+  ADDR_APLICA_DANO:
+    // Restaure as instruções originais aqui
+    // (copie do disassembler antes de modificar)
+    db XX XX XX XX XX  // ← bytes originais`}
         />
+        <p>
+          Este template de God Mode usa injeção de código — uma técnica mais robusta que simplesmente congelar o valor de HP. Em vez de combater o jogo (que continua calculando dano e escrevendo), o código injetado redireciona o fluxo para não aplicar o dano. O template tem marcadores claros de onde você precisa preencher os valores específicos do jogo.
+        </p>
 
-        <h2>Criando seus Próprios Templates</h2>
+        <h2>Template de Lua para Gerenciamento de Cheats</h2>
         <CodeBlock
-          title="Salvando um script como template"
-          language="text"
-          code={`1. Escreva seu script no Auto Assembler (Ctrl+A)
-  2. Selecione todo o código (Ctrl+A para selecionar)
-  3. Copie o código
-  4. Crie um arquivo .txt ou .ce na pasta de templates do CE:
-     C:\Program Files\Cheat Engine 7.5\autorun\templates\
-
-  5. Na próxima vez, acesse via Template → seu arquivo
-     
-  Alternativa: salve em um arquivo .ct compartilhado com
-  prefixo de comentário para identificação:`}
-        />
-
-        <h2>Template Reutilizável de Trainer em Lua</h2>
-        <CodeBlock
-          title="Template base de trainer com hotkeys"
+          title="Template completo de tabela Lua estruturada"
           language="lua"
-          code={`-- Template de Trainer Genérico
-  -- Substitua os endereços e valores conforme necessário
+          code={`-- ================================================
+  -- Template de Tabela Lua para [NOME DO JOGO]
+  -- Versão: 1.0 | Autor: Seu Nome
+  -- Compatível com versão do jogo: X.X.X
+  -- ================================================
 
-  local cheats = {
-    { nome = "Vida Infinita",  addr = "0x00400000", val = "9999", hotkey = VK_F1 },
-    { nome = "Ouro Infinito",  addr = "0x00400010", val = "99999", hotkey = VK_F2 },
-    { nome = "XP Max",         addr = "0x00400020", val = "9999999", hotkey = VK_F3 },
+  -- Configurações — altere estes valores para o seu jogo
+  local CONFIG = {
+    PROCESSO = "game.exe",
+    VERSAO_JOGO = "1.0.0",
+    
+    -- Endereços base (estáticos)
+    BASE_PLAYER = "game.exe+0x009E48",  -- ponteiro para objeto do jogador
+    
+    -- Offsets dentro do objeto do jogador
+    OFF_VIDA     = 0x4C,
+    OFF_VIDA_MAX = 0x50,
+    OFF_MANA     = 0x54,
+    OFF_OURO     = 0x100,
   }
 
-  for _, cheat in ipairs(cheats) do
-    createHotkey(function()
-      local mr = getAddressList().getMemoryRecordByDescription(cheat.nome)
-      if mr then
-        mr.Value = cheat.val
-        mr.Active = not mr.Active
-        print((mr.Active and "Ativado: " or "Desativado: ") .. cheat.nome)
-      end
-    end, cheat.hotkey)
+  -- Funções utilitárias
+  local function getPlayerBase()
+    return readPointer(getAddress(CONFIG.BASE_PLAYER))
   end
-  print("Trainer carregado! F1=Vida, F2=Ouro, F3=XP")`}
+
+  local function getVida()
+    return readInteger(getPlayerBase() + CONFIG.OFF_VIDA)
+  end
+
+  local function setVida(valor)
+    writeInteger(getPlayerBase() + CONFIG.OFF_VIDA, valor)
+  end
+
+  -- Verificação de processo
+  if not process then
+    showMessage("Jogo não detectado. Abra " .. CONFIG.PROCESSO .. " primeiro.")
+    return
+  end
+
+  -- Hotkeys
+  local function toggleGodMode()
+    local mr = getAddressList().getMemoryRecordByDescription("God Mode")
+    if mr then
+      mr.Active = not mr.Active
+      print("God Mode: " .. (mr.Active and "ON" or "OFF"))
+    end
+  end
+
+  createHotkey(toggleGodMode, VK_F1)
+  print("Template carregado! F1 = God Mode")`}
         />
 
-        <AlertBox type="tip" title="Compartilhe Templates Úteis">
-          A comunidade do Cheat Engine no FearLess (fearlessrevolution.com) tem uma seção de templates e recursos reutilizáveis. Compartilhar seus templates ajuda outros e você pode receber melhorias de volta.
+        <h2>Organizando sua Biblioteca de Templates</h2>
+        <p>
+          Com o tempo, você vai acumular vários templates úteis. Uma boa estratégia é criar uma pasta "Templates_CE" com subpastas por tipo: "GodMode", "MoneyHacks", "SpeedScripts", "PointerHelpers", etc. Dentro de cada subpasta, mantenha os arquivos .lua ou .ct com comentários claros sobre como usar.
+        </p>
+        <p>
+          Para templates de Auto Assembler, salve-os como arquivos .txt ou .lua separados (o AA aceita arquivos externos com lua do CE). Para templates de tabela completa, salve como .CT com o nome do padrão: "Template_GodMode_RPG.CT", "Template_MoneyPointer.CT".
+        </p>
+
+        <h2>Gerenciando Versões de Scripts</h2>
+        <p>
+          Jogos são atualizados frequentemente, quebrando offsets e endereços. Uma boa prática é manter um "changelog" no próprio script ou tabela — um comentário no início com as versões do jogo testadas, o que mudou em cada versão, e quais offsets foram verificados por último.
+        </p>
+        <CodeBlock
+          title="Cabeçalho de versão para scripts"
+          language="lua"
+          code={`-- ===========================================
+  -- Tabela: MeuJogo Ultimate Trainer
+  -- ===========================================
+  -- CHANGELOG:
+  -- v3.0 (2026-04-10): Atualizado offsets para patch 1.5.2
+  --   - OFF_VIDA mudou de 0x4C para 0x54
+  --   - OFF_OURO mudou de 0x100 para 0x108
+  --   - Adicionado: suporte a personagens múltiplos
+  --
+  -- v2.0 (2026-02-15): Adicionado Speed Hack automático
+  -- v1.0 (2026-01-01): Versão inicial (patch 1.0.0)
+  -- ===========================================`}
+        />
+
+        <AlertBox type="tip" title="Templates economizam 80% do tempo de desenvolvimento">
+          A maior parte do trabalho de criar um novo cheat está em entender a estrutura do jogo e encontrar os endereços corretos. O código em si é frequentemente um template que você já usou antes. Invista tempo criando bons templates reutilizáveis — o retorno em produtividade é enorme ao longo do tempo.
         </AlertBox>
       </PageContainer>
     );

@@ -6,113 +6,151 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Auto Assembler"
-        subtitle="Como usar o editor Auto Assembler do Cheat Engine para escrever e injetar código Assembly."
+        subtitle="Como usar o compilador Assembly integrado do CE para criar injeções de código, patches e cheats avançados."
         difficulty="avançado"
-        timeToRead="16 min"
+        timeToRead="20 min"
       >
+        <h2>O que é o Auto Assembler</h2>
         <p>
-          O Auto Assembler é o editor de scripts de baixo nível do CE. Ele usa uma sintaxe simplificada de Assembly (com macros e helpers) para injetar código em processos, modificar instruções e criar cheats que vão além de simples modificações de valor.
+          O Auto Assembler (AA) é um compilador Assembly integrado ao Cheat Engine que permite escrever instruções Assembly em texto legível e compilá-las diretamente na memória do processo alvo. É a ferramenta principal para criar cheats que modificam o comportamento do código do jogo — não apenas valores na memória, mas a lógica de execução em si.
+        </p>
+        <p>
+          A diferença entre simples freeze de memória e Auto Assembler é análoga à diferença entre pintar por cima de uma placa de rua e trocar a placa. O freeze "pinta por cima" do valor constantemente. O Auto Assembler "troca a instrução" que escreve o valor — o resultado é mais limpo, mais estável, e frequentemente mais difícil de detectar por anti-cheats simplistas.
         </p>
 
-        <h2>Abrindo o Auto Assembler</h2>
+        <h2>Abrindo e Usando o Auto Assembler</h2>
+        <p>
+          Acesse via Ctrl+Alt+A ou Tools → Auto Assembler. Uma janela de editor de código abre. Você pode digitar código AA diretamente, ou usar templates pré-prontos via Template menu no topo do editor.
+        </p>
+        <p>
+          Para usar, escreva ou cole seu código AA, depois clique "Execute" para compilar e injetar imediatamente no processo. Alternativamente, use "Assign to current cheat table" para salvar o código como um script de Memory Record que pode ser ativado/desativado via checkbox.
+        </p>
+
+        <h2>Estrutura de um Script Auto Assembler</h2>
         <CodeBlock
-          title="Como acessar"
-          language="text"
-          code={`Atalho: Ctrl+A na janela principal do CE
-  Menu: Tools → Auto Assembler
-  Via Memory View: Ctrl+A também funciona lá
-
-  Na janela do AA, clique em Template para inserir
-  estruturas prontas.`}
-        />
-
-        <h2>Sintaxe e Diretivas Principais</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Diretiva</th>
-                <th className="p-3 text-left">Função</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["[ENABLE]", "Código executado ao ativar o script (checkbox marcado)"],
-                ["[DISABLE]", "Código executado ao desativar o script (restaura original)"],
-                ["alloc(nome, tamanho)", "Aloca região de memória para o novo código"],
-                ["dealloc(nome)", "Libera a memória alocada (coloque no [DISABLE])"],
-                ["label(nome)", "Define um label (ponto de referência no código)"],
-                ["registersymbol(nome)", "Registra um símbolo para referenciar no CE"],
-                ["unregistersymbol(nome)", "Remove o símbolo registrado"],
-                ["aobscanmodule(nome, mod, padrão)", "Busca padrão de bytes (AOB) no módulo"],
-                ["db", "Define bytes diretamente (db FF A3 00)"],
-                ["readmem(addr, size)", "Copia bytes de um endereço (para [DISABLE])"],
-              ].map(([dir, func], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-xs">{dir}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{func}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2>Script de Code Injection Completo</h2>
-        <CodeBlock
-          title="Ignorar dano recebido — exemplo real"
+          title="Estrutura completa de script AA com enable/disable"
           language="asm"
-          code={`[ENABLE]
-  // Encontrar a instrução de subtração de vida usando AOB
-  aobscanmodule(INJPOINT, game.exe, 29 83 4C 00 00 00)
-  // 29 = SUB, 83 4C 00 00 00 = [EBX+0x4C]
-  // Isso é: SUB [EBX+4C], EAX — diminuindo a vida
+          code={`// Diretivas de definição (como #define em C)
+  define(MODULO, game.exe)
+  define(ADDR_DANO, MODULO+1F22C)  // endereço onde o dano é aplicado
 
-  alloc(meuCodigo, 256, INJPOINT)
+  [ENABLE]
+  // Código que executa quando o cheat é ATIVADO
 
-  label(codigo)
+  // Passo 1: Alocar memória para o código injetado
+  alloc(meuCodigo, 256, ADDR_DANO)
+
+  // Passo 2: Definir labels para referências de endereço
+  label(original)
   label(retorno)
 
+  // Passo 3: Escrever o código injetado no bloco alocado
   meuCodigo:
-  codigo:
-    // Ignoramos a instrução original (não subtraímos nada)
-    // e pulamos de volta para depois dela
-    jmp retorno
-
-  INJPOINT:
-    jmp meuCodigo  // 5 bytes
-    nop            // 1 byte (instrução original era 6 bytes total)
+    // Preservar registradores que vamos modificar
+    pushad  // salva todos os registradores
+    
+    // Nossa lógica de cheat aqui:
+    // Zerar EAX para que dano seja 0
+    xor eax, eax
+    
+    // Restaurar registradores
+    popad
+    
+  original:
+    // Aqui virão as instruções originais do jogo que fomos sobrescrever
+    // (preenchidas pelo template automaticamente se usar newmem)
+    sub ecx, eax  // instrução original de dano
+    
   retorno:
-  registersymbol(INJPOINT)
+    jmp ADDR_DANO+6  // volta após as instruções que sobrescrevemos
+
+  // Passo 4: Sobrescrever as instruções originais com jump para nosso código
+  ADDR_DANO:
+    jmp meuCodigo  // JMP ocupa 5 bytes
+    nop            // padding se a instrução original tinha mais de 5 bytes
 
   [DISABLE]
-  INJPOINT:
-    db 29 83 4C 00 00 00  // restaura: SUB [EBX+0x4C], EAX
-  unregistersymbol(INJPOINT)
+  // Código que executa quando o cheat é DESATIVADO
+
+  // Restaurar os bytes originais
+  ADDR_DANO:
+    sub ecx, eax  // restaura instrução original
+    nop
+
+  // Liberar a memória alocada
   dealloc(meuCodigo)`}
         />
 
-        <h2>AOB (Array of Bytes) — Por que usar</h2>
+        <h2>O Template "Code Injection"</h2>
         <p>
-          Em vez de endereços absolutos, use AOB para que o script funcione mesmo após updates do jogo:
+          Em vez de escrever tudo manualmente, o AA oferece um template de "Code Injection" que preenche automaticamente a estrutura básica. Vá em Template → Code Injection → digite o endereço onde quer injetar → o template é criado com os bytes originais já preenchidos nas posições corretas.
+        </p>
+        <p>
+          O template de Code Injection gera automaticamente: a diretiva alloc com tamanho adequado, o ponto de desvio (JMP) no endereço original, a seção de código injetado com os bytes originais copiados, o JMP de retorno para após o desvio, e a seção DISABLE que restaura tudo. Você só precisa adicionar sua lógica de cheat no meio.
+        </p>
+
+        <h2>Instruções Especiais do Auto Assembler</h2>
+        <p>
+          O AA tem algumas instruções além do Assembly padrão que facilitam a criação de cheats:
+        </p>
+        <p>
+          <strong>alloc(nome, tamanho):</strong> Aloca memória executável no processo. O bloco alocado é onde você coloca seu código injetado. Sempre especifique tamanho suficiente — mais é melhor que menos. O bloco é inicializado com NOPs.
+        </p>
+        <p>
+          <strong>dealloc(nome):</strong> Libera a memória alocada. Sempre faça isso no DISABLE para não vazar memória.
+        </p>
+        <p>
+          <strong>label(nome):</strong> Define um label (rótulo) para referência por outros pontos do código. Permite usar nomes em vez de endereços numéricos.
+        </p>
+        <p>
+          <strong>define(nome, valor):</strong> Cria uma constante simbólica. "define(HP_OFFSET, 4C)" permite usar HP_OFFSET em vez de 4C em todo o código — mais legível e fácil de atualizar.
+        </p>
+        <p>
+          <strong>aobscanmodule(nome, modulo, padrão):</strong> Busca um padrão de bytes (Array of Bytes) no módulo especificado e define o resultado como um label. Permite que o script encontre automaticamente o endereço correto mesmo após atualizações do jogo.
         </p>
         <CodeBlock
-          title="aobscanmodule — busca por padrão de bytes"
+          title="Usando AOB scan para endereços automáticos"
           language="asm"
-          code={`// Busca o padrão FF 83 4C 00 00 00 ?? no módulo game.exe
-  // O ?? é wildcard — aceita qualquer byte nessa posição
-  aobscanmodule(MEUADDR, game.exe, FF 83 4C 00 00 00 ??)
+          code={`[ENABLE]
+  // Encontra automaticamente a instrução de dano pelo padrão de bytes
+  // em vez de depender de um endereço fixo que muda com updates
+  aobscanmodule(ADDR_DANO_AOB, game.exe, 2B C8 89 43 4C)
+  // 2B C8 = SUB ECX, EAX
+  // 89 43 4C = MOV [EBX+4C], ECX
+  // Esse padrão identifica a sequência de dano + escrita de HP
 
-  // Depois use MEUADDR como endereço
-  MEUADDR:
-    // code...`}
+  // Agora ADDR_DANO_AOB contém o endereço onde esse padrão foi encontrado
+  // O resto do script usa esse endereço normalmente
+
+  alloc(godMode, 256, ADDR_DANO_AOB)
+  label(retorno)
+
+  godMode:
+    // Código que ignora o dano...
+    mov ecx, [ebx+4C]  // lê HP atual sem subtrair dano
+    mov [ebx+4C], ecx  // escreve o mesmo valor (sem mudança)
+    jmp retorno
+
+  ADDR_DANO_AOB:
+    jmp godMode
+    nop
+    nop
+
+  retorno:
+
+  [DISABLE]
+  ADDR_DANO_AOB:
+    sub ecx, eax    // restaura SUB
+    mov [ebx+4C], ecx  // restaura MOV
+  dealloc(godMode)`}
         />
 
-        <AlertBox type="tip" title="Dica — Execute o Script para Testar">
-          Antes de fechar o Auto Assembler, clique em "Execute" para testar o script sem associá-lo a um endereço. Se der erro, a mensagem aparece no console. Se funcionar, você pode então associar ao Memory Record.
+        <AlertBox type="warning" title="Bytes originais devem ser copiados exatamente">
+          Ao escrever a seção DISABLE do script, os bytes originais devem ser idênticos aos que existiam antes. Copie exatamente do disassembler — olhe os bytes hexadecimais, não apenas a instrução em texto. Uma instrução pode ter múltiplos encodings diferentes.
         </AlertBox>
 
-        <AlertBox type="warning" title="Erros comuns no Auto Assembler">
-          Os erros mais frequentes são: instrução original não restaurada corretamente (causando crash), tamanho alocado insuficiente (alloc muito pequeno), e label undefined. Sempre teste em um ambiente controlado antes de usar no jogo real.
+        <AlertBox type="tip" title="Use AOB scan para scripts resistentes a updates">
+          Scripts que dependem de endereços fixos quebram a cada update do jogo. Scripts que usam aobscanmodule com padrões de bytes únicos encontram automaticamente o novo endereço após o update. Invista tempo criando bons padrões AOB — o script vai funcionar por muito mais tempo sem manutenção.
         </AlertBox>
       </PageContainer>
     );

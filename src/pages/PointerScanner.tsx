@@ -6,86 +6,104 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Pointer Scanner"
-        subtitle="Como usar o Pointer Scanner do Cheat Engine para encontrar ponteiros estáticos automaticamente."
+        subtitle="Como usar o Pointer Scanner para encontrar automaticamente caminhos estáticos até endereços dinâmicos."
         difficulty="intermediário"
-        timeToRead="14 min"
+        timeToRead="18 min"
       >
+        <h2>O Problema que o Pointer Scanner Resolve</h2>
         <p>
-          O Pointer Scanner é a ferramenta do Cheat Engine que encontra automaticamente ponteiros estáticos que levam a um endereço dinâmico. Ele percorre a memória em busca de cadeias de ponteiros partindo de endereços estáticos conhecidos até chegar ao endereço alvo.
+          Você passou 20 minutos fazendo varreduras, refinando resultados, e finalmente encontrou o endereço exato da vida do personagem. Você modifica para 9999, freeze, e o jogo funciona perfeitamente. Mas no dia seguinte, você abre o jogo de novo, carrega sua tabela .CT, e o valor que era "Vida do Personagem" está mostrando um número sem sentido, ou pior — o freeze não faz efeito nenhum. O cheat quebrou.
+        </p>
+        <p>
+          Isso acontece porque o endereço que você encontrou era dinâmico — alocado pelo sistema operacional em um local diferente a cada vez que o jogo é iniciado. O objeto "personagem" foi criado em 0x1A2B3C00 ontem, mas hoje o mesmo objeto está em 0x3F7A2800. O endereço 0x1A2B3C4C onde você leu a vida ontem agora contém dados completamente diferentes.
+        </p>
+        <p>
+          O Pointer Scanner resolve isso: em vez de usar o endereço do dado diretamente, ele encontra uma cadeia de ponteiros partindo de um endereço estático (que nunca muda) e seguindo referências até chegar ao dado. Mesmo que o objeto seja criado em lugares diferentes, a cadeia de ponteiros sempre aponta para onde ele está.
         </p>
 
-        <h2>Quando Usar o Pointer Scanner</h2>
+        <h2>Entendendo Ponteiros antes de Usar o Scanner</h2>
         <p>
-          Use quando você encontrou o endereço de um valor mas ele muda a cada reinicialização do jogo (endereço dinâmico/preto). O Pointer Scanner encontra uma rota estável até ele.
+          Um ponteiro é simplesmente um valor que contém o endereço de outro valor. Em vez de guardar a vida diretamente, o jogo guarda a vida num endereço X. E num endereço estático Y (que nunca muda), ele guarda o valor X (o endereço da vida). Então para chegar à vida, você vai a Y, lê o valor lá (que é X), e vai para X+offset para ler a vida.
+        </p>
+        <p>
+          Na prática, games modernos têm múltiplos níveis: um endereço estático aponta para um objeto base, que contém um ponteiro para outro objeto, que contém outro ponteiro, até chegar ao dado final. O Pointer Scanner encontra automaticamente todas essas cadeias.
         </p>
 
-        <h2>Processo Passo a Passo</h2>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Encontre o endereço dinâmico", desc: "Use varredura normal e identifique o endereço do valor (ex: 0x1A2B3C4D)." },
-            { n: "2", passo: "Inicie o Pointer Scanner", desc: "Clique com botão direito no endereço → 'Pointer scan for this address'. Ou menu Tools → Pointer scanner." },
-            { n: "3", passo: "Configure e execute o scan", desc: "Deixe as configurações padrão na primeira vez. Max level 7 é bom para começar. Clique OK." },
-            { n: "4", passo: "Salve o arquivo de resultados", desc: "O CE pede um nome de arquivo para salvar os resultados (.ptr). Escolha um nome descritivo." },
-            { n: "5", passo: "Reinicie o jogo", desc: "Feche e abra o jogo novamente. Não use o CE ainda." },
-            { n: "6", passo: "Encontre o novo endereço", desc: "Após reiniciar, faça uma nova varredura e encontre o endereço atual do mesmo valor." },
-            { n: "7", passo: "Filtre com o novo endereço", desc: "No Pointer Scanner, clique em 'Rescan memory' e informe o novo endereço. Os ponteiros inválidos serão eliminados." },
-            { n: "8", passo: "Repita até poucos resultados", desc: "Reinicie o jogo mais vezes e refine. Os ponteiros que sobreviverem são os estáticos válidos." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <h2>Usando o Pointer Scanner Passo a Passo</h2>
+        <p>
+          <strong>Passo 1 — Encontre o endereço alvo:</strong> Usando varredura normal, encontre o endereço atual do valor que você quer criar um ponteiro. Para a vida, faça First Scan + Next Scans até chegar no endereço. Adicione à Address List e confirme que está funcionando.
+        </p>
+        <p>
+          <strong>Passo 2 — Inicie o Pointer Scan:</strong> Clique com botão direito no endereço na Address List e selecione "Pointer scan for this address". Ou use o menu Tools → Pointer scanner. Uma janela de configuração abre.
+        </p>
+        <p>
+          <strong>Passo 3 — Configure os parâmetros:</strong> Na janela de configuração do Pointer Scan, os parâmetros mais importantes são: "Max levels" (profundidade máxima da cadeia — comece com 5-7), "Max offset" (offset máximo entre ponteiros — 0x1000 é um bom padrão), e o crucial "Only find paths with static address" (deve estar marcado — busca apenas caminhos que começam em endereço estático). Clique OK.
+        </p>
+        <p>
+          <strong>Passo 4 — Salve os resultados:</strong> O CE pede um nome de arquivo para salvar os resultados (.ptr). Escolha um nome descritivo como "Vida_scan1.ptr". O scanner começa a trabalhar — dependendo do tamanho do processo, pode levar de 30 segundos a vários minutos.
+        </p>
+        <p>
+          <strong>Passo 5 — Reinicie o jogo completamente:</strong> Este passo é crítico. Feche o jogo completamente, feche e reabra o CE se necessário, e abra o jogo novamente. Carregue o save ou chegue ao mesmo ponto onde você encontrou o valor antes.
+        </p>
+        <p>
+          <strong>Passo 6 — Encontre o novo endereço:</strong> Faça uma nova varredura para encontrar onde está o valor agora (após o reinício). Este endereço será diferente do anterior (porque o processo foi reiniciado e a memória foi realocada).
+        </p>
+        <p>
+          <strong>Passo 7 — Refine o Pointer Scan:</strong> Na janela do Pointer Scanner (que ainda deve estar aberta com os resultados da primeira scan), vá em "Pointer Scanner → Rescan memory". Informe o novo endereço que você encontrou no passo 6. O CE filtra todos os ponteiros que NÃO levam ao novo endereço — eliminando os inválidos. Os que sobram são caminhos estáticos válidos.
+        </p>
+        <p>
+          <strong>Passo 8 — Repita:</strong> Reinicie o jogo mais vezes, encontre o novo endereço, e faça Rescan novamente. Cada ciclo elimina mais ponteiros falsos. Após 3-5 ciclos, você deve ter uma lista pequena de ponteiros confiáveis.
+        </p>
 
-        <h2>Configurações do Pointer Scanner</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Opção</th>
-                <th className="p-3 text-left">Recomendado</th>
-                <th className="p-3 text-left">Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Max level", "5-7", "Profundidade máxima da cadeia de ponteiros. Mais = mais resultados e mais lento."],
-                ["Max offset", "4096 (0x1000)", "Offset máximo entre ponteiros. Valores maiores = mais resultados."],
-                ["Only find paths with static address", "✅ Ativado", "Essencial — filtra apenas caminhos que começam em endereço estático."],
-                ["Allow stack", "❌ Desativado", "Inclui ponteiros na pilha — geralmente inúteis."],
-                ["Pointer must point to module", "Opcional", "Restringe o início ao módulo do executável — menos resultados mas mais confiáveis."],
-              ].map(([opcao, rec, desc], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-xs">{opcao}</td>
-                  <td className="p-3 text-green-400 text-sm font-medium">{rec}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{desc}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h2>Interpretando os Resultados</h2>
+        <p>
+          Cada resultado no Pointer Scanner mostra um caminho: o endereço base estático (relativo ao módulo, como "game.exe+0x009E48") seguido por uma série de offsets (como +0x148, +0x64, +0x4C). Para chegar ao valor final, você vai ao endereço base, lê o valor lá (que é um endereço), soma o primeiro offset, lê o valor nesse novo endereço, soma o próximo offset, e assim por diante.
+        </p>
+        <p>
+          Resultados com menos níveis (offsets) são geralmente mais confiáveis e mais simples de usar. Um ponteiro de 2 níveis que sobreviveu a 5 reinícios é quase certamente válido. Um ponteiro de 7 níveis que sobreviveu ao mesmo número de testes também é válido, mas é mais frágil — atualização do jogo tem mais chance de quebrar uma cadeia longa.
+        </p>
+        <p>
+          Quando a lista tem dezenas de resultados, selecione alguns com menos níveis e adicione à Address List para teste. Se o valor mostrado estiver correto e continuar correto após reiniciar o jogo várias vezes, o ponteiro é válido.
+        </p>
 
-        <AlertBox type="tip" title="Dica — Número de Refinamentos">
-          Quanto mais vezes você reiniciar o jogo e refinar o scan, mais confiável será o ponteiro. O ideal é refinar pelo menos 3-5 vezes. Um ponteiro que sobrevive a 5 reinícios é quase certamente estático.
-        </AlertBox>
-
-        <h2>Adicionando o Ponteiro Encontrado</h2>
+        <h2>Adicionando o Ponteiro à Address List</h2>
         <CodeBlock
           title="Usando o resultado do Pointer Scanner"
           language="text"
-          code={`1. Selecione um resultado confiável na lista do Pointer Scanner
-  2. Clique com botão direito → "Add selected results to addresslist"
-  3. O endereço será adicionado como ponteiro (aparece em roxo)
-  4. Verifique: reinicie o jogo e confirme que o valor ainda aparece corretamente
-  5. Se o valor estiver correto após reiniciar, o ponteiro é válido!`}
+          code={`Na janela do Pointer Scanner, após ter poucos resultados confiáveis:
+
+  1. Selecione um resultado (preferencialmente com poucos níveis)
+  2. Clique direito → "Add selected results to addresslist"
+     ou arraste o resultado para a Address List
+
+  3. O endereço aparece com cor roxa/violeta na Address List
+     (indicando que é um ponteiro configurado)
+
+  4. Renomeie para algo descritivo: "Vida [Ponteiro Estático]"
+
+  5. VALIDAÇÃO — reinicie o jogo novamente e confirme:
+     - O valor na Address List ainda mostra o HP correto?
+     - Modificar o valor ainda afeta a vida no jogo?
+     Se sim para ambas: o ponteiro é válido e pode ser salvo na tabela!`}
         />
 
-        <AlertBox type="info" title="Ponteiros de Múltiplos Níveis">
-          Um ponteiro pode ter vários offsets: [[baseAddr] + 0x30] + 0x4C etc. O Pointer Scanner encontra esses caminhos automaticamente. Quanto mais níveis, mais frágil o ponteiro pode ser após atualizações do jogo.
+        <h2>Configurações Avançadas do Pointer Scanner</h2>
+        <p>
+          <strong>"Pointer must point to module":</strong> Restringe o início da cadeia ao módulo principal do executável (game.exe). Reduz drasticamente o número de resultados e geralmente os torna mais confiáveis, pois ponteiros que começam no módulo principal são mais estáveis.
+        </p>
+        <p>
+          <strong>"Allow stack":</strong> Inclui ponteiros na pilha (stack) do processo. Raramente útil — ponteiros de stack são geralmente temporários e inválidos fora de um contexto de função específica. Deixe desmarcado a menos que você saiba que precisa.
+        </p>
+        <p>
+          <strong>"Use saved pointer scan file":</strong> Permite combinar múltiplos arquivos de scan. Se você fez scan com o endereço de hoje e salvou, e fez scan com o endereço de amanhã e salvou, você pode combinar os dois arquivos para refinar ainda mais.
+        </p>
+
+        <AlertBox type="tip" title="Mais ciclos = mais confiança">
+          O número de vezes que você reinicia o jogo e refina é diretamente proporcional à confiança no ponteiro. Ponteiros que sobrevivem a 5+ reinícios raramente falham. Para ponteiros que você vai compartilhar em tabelas públicas, faça pelo menos 5-10 ciclos de validação.
+        </AlertBox>
+
+        <AlertBox type="warning" title="Ponteiros podem quebrar com updates do jogo">
+          Cada vez que o desenvolvedor lança uma atualização que modifica o código ou estruturas de dados, os offsets do ponteiro podem mudar. Um ponteiro que funcionava perfeitamente antes de um patch pode parar de funcionar depois. Verifique tabelas sempre que o jogo for atualizado.
         </AlertBox>
       </PageContainer>
     );

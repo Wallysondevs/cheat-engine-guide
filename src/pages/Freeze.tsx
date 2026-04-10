@@ -6,112 +6,147 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Freeze de Valores"
-        subtitle="Como travar valores para que não mudem — vida infinita, munição infinita e mais."
+        subtitle="Como travar valores na memória para que o jogo não possa alterá-los — e todas as nuances dessa técnica."
         difficulty="iniciante"
-        timeToRead="10 min"
+        timeToRead="15 min"
       >
-        <h2>O que é Freeze?</h2>
+        <h2>O que é o Freeze e como funciona internamente</h2>
         <p>
-          O Freeze (congelar) é uma funcionalidade que força o Cheat Engine a reescrever continuamente um valor no endereço de memória, fazendo com que ele permaneça constante mesmo que o jogo tente alterá-lo. É como "travar" o valor — o jogo pode tentar reduzir sua vida, mas o CE restaura imediatamente.
+          O Freeze (congelamento) é uma funcionalidade que faz o Cheat Engine reescrever continuamente um valor em um endereço de memória, a uma frequência alta o suficiente para que o jogo não consiga alterá-lo de forma perceptível. O princípio é simples: mesmo que o jogo escreva "90" no endereço da vida a cada 16ms (equivalente a 60fps), o CE escreve "100" no mesmo endereço a cada poucos milissegundos, sobrepondo a escrita do jogo.
+        </p>
+        <p>
+          O resultado prático é que o valor parece travado do ponto de vista do jogador e do jogo — a vida nunca cai, o ouro nunca diminui, o timer nunca conta. É uma das técnicas mais simples e mais usadas no Cheat Engine, especialmente para criação rápida de cheats de vida infinita e munição infinita.
+        </p>
+        <p>
+          É importante entender que o Freeze não impede que o jogo escreva no endereço — ele apenas sobrescreve o que o jogo escreveu logo em seguida. Isso significa que, em teoria, existe uma janela de tempo minúscula onde o valor está errado. Para a maioria dos jogos, essa janela é imperceptível. Porém, em jogos muito rápidos ou com verificações síncronas, pode haver instabilidade.
         </p>
 
-        <h2>Como Ativar o Freeze</h2>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Encontre e adicione o endereço à lista", desc: "Use varredura para encontrar o valor e clique em 'Add to list'" },
-            { n: "2", passo: "Defina o valor que quer travar", desc: "Duplo clique na coluna Value e digite o valor desejado (ex: 9999)" },
-            { n: "3", passo: "Marque o checkbox", desc: "Clique na caixa de seleção na primeira coluna (Active). O endereço ficará travado." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-4 p-4 border border-border rounded-xl bg-card">
-              <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-1">{item.passo}</h4>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <h2>Opções Avançadas de Freeze</h2>
+        <h2>Como Ativar o Freeze Passo a Passo</h2>
         <p>
-          Clique com botão direito em um endereço na Address List para ver opções avançadas de freeze:
+          O processo de ativar o freeze é direto, mas há uma ordem correta a seguir para garantir que o valor seja travado no número que você deseja, e não em um valor aleatório.
         </p>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Opção</th>
-                <th className="p-3 text-left">Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Set/show timer freeze interval", "Controla a frequência de reescrita (em milissegundos). Padrão: a cada ciclo do CE."],
-                ["Set value (frozen)", "Define um valor específico para o freeze, diferente do valor atual."],
-                ["Freeze type: Set value", "Modo padrão: define o valor no intervalo configurado."],
-                ["Freeze type: Increase value", "A cada ciclo, soma uma quantidade ao valor — útil para acumular recursos."],
-                ["Freeze type: Decrease value", "A cada ciclo, subtrai — útil para cooldowns ou cronômetros."],
-              ].map(([opcao, desc], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-mono text-primary text-xs">{opcao}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{desc}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2>Freeze com Hotkeys</h2>
         <p>
-          Em vez de manter o freeze sempre ativo, configure um hotkey para ativar/desativar conforme necessário. Isso evita conflitos com mecânicas do jogo.
+          Primeiro, você precisa ter o endereço na Address List — se você acabou de encontrá-lo por varredura, selecione-o na lista de resultados e pressione Enter (ou duplo clique) para adicionar à Address List. O endereço aparecerá no painel inferior com um checkbox na coluna "Active" (que fica desmarcado por padrão).
+        </p>
+        <p>
+          Segundo, antes de ativar o freeze, defina o valor que você quer travar. Duplo clique na coluna Value, digite o número desejado (por exemplo, 100 para vida máxima, ou 9999 para um valor alto artificial) e confirme com Enter. Isso garante que o freeze vai manter exatamente aquele valor, e não o valor atual que pode ser baixo (ex: você já tomou dano e a vida está em 30).
+        </p>
+        <p>
+          Terceiro, marque o checkbox na coluna Active. O endereço ficará realçado e o CE começará a reescrever o valor continuamente. Você verá o valor na coluna Value se estabilizar no número que você definiu. No jogo, a barra de vida ou o recurso que você travou ficará constante.
+        </p>
+        <p>
+          Para desativar, simplesmente desmarque o checkbox. O valor voltará a ser controlado pelo jogo normalmente.
+        </p>
+
+        <h2>Freeze em Múltiplos Endereços Simultaneamente</h2>
+        <p>
+          Uma técnica muito útil é selecionar múltiplos endereços na Address List e ativar o freeze em todos de uma vez. Selecione os endereços com <kbd>Ctrl+Click</kbd> ou <kbd>Shift+Click</kbd> (para selecionar um intervalo), depois pressione <kbd>Espaço</kbd> para ativar/desativar o freeze em todos os selecionados simultaneamente. Alternativamente, clique com botão direito → "Toggle all checkboxes".
+        </p>
+        <p>
+          Isso é especialmente útil quando você tem um grupo de cheats numa tabela organizada — todos os recursos (vida, mana, stamina, munição) podem ser ativados com um único atalho, em vez de clicar em cada checkbox individualmente.
+        </p>
+
+        <h2>Opções Avançadas de Freeze — Tipos de Congelamento</h2>
+        <p>
+          O Cheat Engine oferece mais do que simplesmente travar um valor fixo. Ao clicar com botão direito em um endereço freezado, você verá opções de "Freeze type" que mudam o comportamento do freeze:
+        </p>
+        <p>
+          <strong>Set value (padrão):</strong> O modo clássico. O CE reescreve o valor definido repetidamente. O valor fica absolutamente constante no número que você escolheu. É o mais usado e o que a maioria das pessoas pensa quando fala em "freeze".
+        </p>
+        <p>
+          <strong>Increase value by X:</strong> A cada ciclo do freeze, o CE adiciona X ao valor atual. Se você definir X como 10 e o intervalo como 1000ms, o valor aumentará em 10 a cada segundo. Útil para acumular recursos continuamente — por exemplo, ganhar ouro automaticamente enquanto o jogo roda, sem precisar fazer nada.
+        </p>
+        <p>
+          <strong>Decrease value by X:</strong> O oposto do anterior. A cada ciclo, subtrai X do valor. Útil para timers de cooldown — você pode fazer o cooldown diminuir mais rápido do que normalmente diminuiria, efetivamente tornando habilidades com recarga quase instantânea.
+        </p>
+
+        <h2>Controlando o Intervalo de Reescrita</h2>
+        <p>
+          O intervalo padrão de reescrita do freeze é determinado pelo ciclo de processamento do CE, que geralmente é bem rápido (dezenas de milissegundos). Para a maioria dos jogos, isso é suficiente. Mas você pode configurar manualmente o intervalo de uma forma mais específica.
+        </p>
+        <p>
+          Clique com botão direito no endereço e selecione <strong>"Set/show timer freeze interval"</strong>. Uma caixa de diálogo permite definir o intervalo em milissegundos. Um valor de 100ms significa que o CE reescreve o valor 10 vezes por segundo. Um valor de 16ms equivale a aproximadamente 60 reescritas por segundo — sincronizado com o framerate de muitos jogos.
+        </p>
+        <p>
+          Por que isso importa? Em alguns jogos, um intervalo muito longo pode resultar em "piscar" visível — você vê a vida cair por uma fração de segundo antes de ser restaurada. Reduzir o intervalo elimina esse efeito. Por outro lado, um intervalo muito curto aumenta o uso de CPU do CE. 50-100ms é um bom ponto de partida.
+        </p>
+
+        <h2>Freeze com Hotkeys — Controle Sem Sair do Jogo</h2>
+        <p>
+          Manter o freeze sempre ativo pode causar problemas com certas mecânicas do jogo. A melhor prática é configurar uma hotkey para ativar e desativar o freeze conforme necessário, sem precisar alternar para a janela do CE.
+        </p>
+        <p>
+          Para configurar uma hotkey de freeze, clique com botão direito no endereço na Address List e selecione "Set hotkey". Na janela que abre, pressione a tecla que você quer usar (ex: <kbd>F1</kbd>), escolha a ação "Toggle activation" (para alternar entre ativo e inativo), e confirme. A partir daí, pressionar F1 durante o jogo ativa ou desativa o freeze daquele endereço específico.
+        </p>
+        <p>
+          Uma estratégia popular é usar a tecla do freeze apenas durante momentos críticos. Por exemplo: você joga normalmente, quando está prestes a morrer pressiona F1 para ativar vida infinita, sobrevive ao momento difícil, e pressiona F1 novamente para desativar e continuar jogando normalmente. Isso preserva a experiência de jogo enquanto ainda oferece uma "rede de segurança".
+        </p>
+
+        <h2>Freeze via Lua — Controle Programático</h2>
+        <p>
+          Para tabelas mais sofisticadas, você pode controlar o freeze de endereços via scripts Lua. Isso permite criar lógicas condicionais — ativar o freeze apenas quando determinada condição é verdadeira, ou alterar o valor de freeze dinamicamente baseado em outros valores do jogo.
         </p>
         <CodeBlock
-          title="Ativando freeze via hotkey no CE"
-          language="text"
-          code={`1. Na Address List, clique com botão direito no endereço
-  2. Selecione "Set hotkeys" ou configure via menu Table → Hot Keys
-  3. Atribua uma tecla (ex: F1) para ativar/desativar o freeze
-  4. Durante o jogo, pressione F1 para congelar/descongelar o valor`}
-        />
-
-        <h2>Freeze via Lua Script</h2>
-        <CodeBlock
-          title="Freeze programático com Lua"
+          title="Ativando freeze em múltiplos endereços por Lua"
           language="lua"
-          code={`-- Ativar freeze em todos os endereços com "Vida" no nome
+          code={`-- Ativar freeze em todos os cheats de um grupo específico
   local al = getAddressList()
   for i = 0, al.Count - 1 do
     local rec = al.getMemoryRecord(i)
-    if rec.Description:find("Vida") then
-      rec.Value = "9999"
+    -- Ativa todos que começam com "[Recurso]"
+    if rec.Description:find("^%[Recurso%]") then
       rec.Active = true
       print("Freeze ativado: " .. rec.Description)
     end
   end`}
         />
+        <CodeBlock
+          title="Freeze condicional — ativa apenas quando vida está baixa"
+          language="lua"
+          code={`-- Apenas ativa o freeze de vida quando HP caiu abaixo de 20%
+  local ADDR_VIDA = "game.exe+0x12345"
+  local HP_MAXIMO = 100
+  local LIMITE = 20  -- ativa freeze se vida < 20
 
-        <AlertBox type="warning" title="Freeze pode travar o jogo?">
-          Em alguns jogos, travar certos valores pode causar bugs ou comportamentos inesperados. Por exemplo, travar o tempo de recarga de uma habilidade em 0 pode quebrar animações. Travar saúde do inimigo pode tornar o jogo impossível de completar. Teste com cuidado.
+  local mr = getAddressList().getMemoryRecordByDescription("Vida")
+
+  local timer = createTimer(nil, false)
+  timer.Interval = 250  -- verifica 4x por segundo
+  timer.OnTimer = function()
+    local vida = readInteger(ADDR_VIDA)
+    if vida < LIMITE and not mr.Active then
+      mr.Value = tostring(HP_MAXIMO)
+      mr.Active = true
+      print("ALERTA: vida baixa — freeze ativado!")
+    elseif vida >= LIMITE and mr.Active then
+      mr.Active = false
+      print("Vida normalizada — freeze desativado.")
+    end
+  end
+  timer.Enabled = true`}
+        />
+
+        <h2>Casos de Uso Comuns e Considerações Práticas</h2>
+        <p>
+          <strong>Vida infinita:</strong> Trave a vida no valor máximo. É importante também travá-la um pouco acima do máximo visível? Às vezes sim — alguns jogos têm escudos ou camadas de HP que somam ao total e são representados separadamente. Verifique se o jogo usa HP "acima do máximo" como escudo e trave os dois endereços.
+        </p>
+        <p>
+          <strong>Munição infinita:</strong> Freqüentemente requer dois endereços — a munição do carregador atual e a reserva total de balas. Se você trava apenas o carregador mas não a reserva, recarregar pode zerar a reserva e o jogo pode não carregar mais. Identifique ambos e freeze os dois.
+        </p>
+        <p>
+          <strong>Dinheiro/ouro:</strong> Travar em um valor alto funciona, mas cuidado com jogos que verificam se você tem saldo suficiente antes de uma compra — às vezes o valor travado pode causar problemas com transações. Uma alternativa é travar no valor que você quer e ativar/desativar conforme necessário.
+        </p>
+        <p>
+          <strong>Timer de corrida ou combate:</strong> Travar o timer impede que ele avance, dando tempo ilimitado. Mas esteja ciente de que alguns jogos têm verificações do lado do servidor — em modo online, isso pode resultar em desconexão ou ban.
+        </p>
+
+        <AlertBox type="warning" title="Freeze pode causar comportamentos inesperados">
+          Travar certos valores pode quebrar mecânicas do jogo. Por exemplo, travar o HP do inimigo em 9999 pode tornar o jogo impossível de completar. Travar valores de física ou movimento pode quebrar a simulação. Travar valores de IA pode fazer os inimigos pararem de se mover. Sempre entenda o que o valor representa antes de travá-lo e tenha um plano para desfazer se algo der errado.
         </AlertBox>
 
-        <AlertBox type="tip" title="Dica — Freeze Seletivo">
-          Não congele todos os valores ao mesmo tempo. Ative o freeze apenas para os valores essenciais e desative para os demais. Isso mantém a jogabilidade mais natural e reduz a chance de bugs.
+        <AlertBox type="tip" title="Use grupos na Address List para organizar freezes">
+          Crie grupos na Address List (clique direito → Add Group) para organizar seus cheats por categoria — "Combate", "Recursos", "Movimento". Isso facilita ativar e desativar grupos inteiros de freezes rapidamente, especialmente quando você tem 10 ou mais endereços numa tabela.
         </AlertBox>
-
-        <h2>Casos de Uso Comuns</h2>
-        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
-          {[
-            { caso: "Vida Infinita", desc: "Trave a vida no valor máximo. Defina o valor para 100 (ou o máximo do jogo) antes de ativar." },
-            { caso: "Munição Infinita", desc: "Trave a munição atual e a do carregador. Pode ser necessário dois endereços diferentes." },
-            { caso: "Dinheiro/Ouro", desc: "Trave em um valor alto. Mas cuidado — transações que verificam saldo antes de gastar podem falhar." },
-            { caso: "Tempo de Partida", desc: "Trave o cronômetro para parar o tempo. Funciona bem em jogos com limite de tempo." },
-          ].map((item) => (
-            <div key={item.caso} className="border border-border rounded-xl p-4 bg-card">
-              <h4 className="font-bold text-sm mb-1 text-primary">{item.caso}</h4>
-              <p className="text-xs text-muted-foreground">{item.desc}</p>
-            </div>
-          ))}
-        </div>
       </PageContainer>
     );
   }

@@ -6,129 +6,117 @@ import { PageContainer } from "@/components/layout/PageContainer";
     return (
       <PageContainer
         title="Injeção de Código"
-        subtitle="Como modificar o comportamento de um jogo injetando instruções Assembly diretamente na memória."
+        subtitle="Como injetar código Assembly no jogo para modificar seu comportamento de forma permanente e limpa."
         difficulty="avançado"
-        timeToRead="16 min"
+        timeToRead="20 min"
       >
+        <h2>Por que injetar código em vez de apenas modificar memória</h2>
         <p>
-          A injeção de código é a técnica mais poderosa do Cheat Engine: em vez de apenas modificar valores, você <strong>modifica o comportamento</strong> do jogo — mudando as instruções que ele executa. É a diferença entre "defina vida = 9999" e "faça o jogo nunca diminuir a vida".
+          Modificar valores na memória tem limitações: o jogo continua calculando e sobrescrevendo os valores que você muda. O freeze do CE fica em uma luta constante com o jogo — CE escreve 100, o jogo escreve 75, CE escreve 100, o jogo escreve 75, dezenas de vezes por segundo. Além de ser conceitualmente "sujo", pode ter janelas de tempo onde o valor errado causa efeitos indesejados.
+        </p>
+        <p>
+          A injeção de código resolve isso na raiz: em vez de sobrescrever o resultado, você modifica o código que produz o resultado. O jogo ainda executa sua lógica de dano, mas a instrução que aplica o dano na memória foi substituída por código que simplesmente não aplica dano. Nenhuma luta, nenhum freeze, nenhuma inconsistência.
         </p>
 
-        <h2>Como Funciona a Injeção de Código</h2>
+        <h2>O Modelo de Code Injection</h2>
         <p>
-          A técnica clássica é chamada de <strong>Code Cave</strong> ou <strong>Detour</strong>:
+          A injeção de código no CE segue um modelo padrão chamado "detour" (desvio). O processo funciona assim: você identifica uma instrução específica no código do jogo que quer modificar. Você aloca uma região de memória executável em outro lugar (o "cave" ou caverna de código). Você sobrescreve a instrução original com um JMP para sua caverna. Na caverna, você coloca o código injetado (sua lógica de cheat), seguido pelas instruções originais que foram sobrescritas, seguido de um JMP de volta para logo após onde você desviou.
         </p>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Encontre a instrução alvo", desc: "Use What Writes para identificar a instrução Assembly que modifica o valor (ex: SUB [EBX+4C], EAX diminui a vida)." },
-            { n: "2", passo: "Aloque nova memória", desc: "Use alloc() no Auto Assembler para reservar espaço para seu novo código." },
-            { n: "3", passo: "Escreva seu código", desc: "Seu código substitui ou estende a instrução original — pode ignorar, modificar valores ou adicionar lógica." },
-            { n: "4", passo: "Instale o hook (JMP)", desc: "Substitua a instrução original por um JMP para seu código (5 bytes). Bytes restantes viram NOP." },
-            { n: "5", passo: "Retorne ao fluxo original", desc: "Ao final do seu código, pule de volta para a instrução seguinte ao hook." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <p>
+          O resultado: o jogo executa tudo normalmente até chegar à instrução que você modificou. Em vez da instrução original, ele executa um JMP para sua caverna. Na caverna, seu código roda (ex: zerando o dano), as instruções originais rodam (ex: escrevendo o dano — que agora é zero — na memória), e então volta para o jogo como se nada tivesse acontecido. O jogo não sabe que algo foi inserido no fluxo.
+        </p>
 
-        <h2>Exemplo: Ignorar Dano no Jogador</h2>
+        <h2>Implementando um Code Injection Completo</h2>
         <CodeBlock
-          title="Code Injection completa — godmode"
+          title="God Mode por injeção de código"
           language="asm"
-          code={`// Situação: identificamos que EBX+0x4C é a vida do jogador
-  // A instrução que a reduz é: SUB [EBX+4C], EAX
+          code={`// Contexto: queremos que o personagem nunca tome dano
+  // Instrução original encontrada via "what writes": SUB ECX, EAX (2B C8)
+  // Seguida por: MOV [EBX+4C], ECX (89 4B 4C)
+  // Total: 5 bytes — perfeito para um JMP (que usa exatamente 5 bytes)
 
   [ENABLE]
-  aobscanmodule(INJPOINT, game.exe, 2B 83 4C 00 00 00)
-  alloc(godmem, 256, INJPOINT)
+  define(game, game.exe)
+  define(addrDano, game+001F22C)  // endereço onde SUB ECX, EAX está
 
-  label(codigo)
-  label(retorno)
-  label(original)
+  // Criar a caverna de código
+  alloc(godModeCave, 128, addrDano)
+  label(godModeOriginal)
+  label(godModeReturn)
 
-  godmem:
-  codigo:
-    // Verificar se é o jogador antes de ignorar o dano
-    // EBX aponta para a struct do personagem
-    // Se for inimigo, aplicar o dano normalmente
+  godModeCave:
+    // Nosso cheat: em vez de subtrair o dano (ECX = ECX - EAX),
+    // não fazemos nada com ECX — ele já tem o HP atual
+    // Simplesmente restauramos as instruções originais SEM o SUB:
     
-    // Simplesmente pular a instrução — nenhum dano
-    // Para ignorar o dano apenas do jogador, adicione comparação aqui
+    // Salvar EAX (o dano) por segurança
+    push eax
+    xor eax, eax       // zera EAX (dano = 0)
     
-    jmp retorno
+  godModeOriginal:
+    sub ecx, eax       // ECX - 0 = ECX (HP não muda!)
+    mov [ebx+4C], ecx  // escreve HP inalterado
 
-  INJPOINT:
-    jmp godmem  // 5 bytes — sobrescreve os 6 bytes originais
-    nop         // 1 byte extra para completar
-  retorno:
-  registersymbol(INJPOINT)
+    // Restaurar EAX original
+    pop eax
+
+  godModeReturn:
+    jmp addrDano+5     // volta para após as instruções sobrescritas
+                       // (5 bytes: o tamanho do JMP que colocamos)
+
+  // Sobrescrever instruções originais com JMP para a caverna
+  addrDano:
+    jmp godModeCave     // JMP = 5 bytes: E9 XX XX XX XX
+    // as 3 instruções originais que somam 5 bytes são sobrescritas
 
   [DISABLE]
-  INJPOINT:
-    db 2B 83 4C 00 00 00  // restaura: SUB [EBX+0x4C], EAX
-  unregistersymbol(INJPOINT)
-  dealloc(godmem)`}
+  // Restaurar os bytes originais exatamente
+  addrDano:
+    db 2B C8           // SUB ECX, EAX
+    db 89 4B 4C        // MOV [EBX+4C], ECX
+
+  dealloc(godModeCave)`}
         />
 
-        <h2>Exemplo: Modificar Dano Causado</h2>
+        <h2>Calculando o Tamanho das Instruções</h2>
+        <p>
+          Um desafio crítico: o JMP de 32 bits ocupa exatamente 5 bytes (E9 + 4 bytes de offset relativo). As instruções que você vai sobrescrever precisam ter exatamente 5 bytes — nem mais, nem menos. Se as instruções têm menos de 5 bytes, você vai sobrescrever instruções adicionais que não deveria. Se têm mais de 5, você não sobrescreveu completamente a instrução original.
+        </p>
+        <p>
+          A solução: calcule o tamanho total das instruções no disassembler. Cada instrução Assembly tem um tamanho em bytes mostrado no disassembler do CE. Some os tamanhos até chegar a pelo menos 5. Se a soma der mais que 5, inclua todas essas instruções na seção "godModeOriginal" do seu cave — elas precisam ser restauradas tanto na caverna quanto no DISABLE.
+        </p>
         <CodeBlock
-          title="Multiplicar o dano causado por 10x"
-          language="asm"
-          code={`[ENABLE]
-  aobscanmodule(DANO_INJPOINT, game.exe, 29 83 50 00 00 00)
-  alloc(danomem, 256, DANO_INJPOINT)
+          title="Exemplo de cálculo de tamanhos"
+          language="text"
+          code={`Instruções no endereço alvo:
+  00A1F22C: 2B C8         (2 bytes) SUB ECX, EAX
+  00A1F22E: 89 4B 4C      (3 bytes) MOV [EBX+4C], ECX
 
-  label(danoreturn)
+  Total: 2 + 3 = 5 bytes ✓ Perfeito para um JMP de 5 bytes!
 
-  danomem:
-    // EAX contém o dano a ser aplicado
-    // Multiplicamos por 10 antes de aplicar
-    imul eax, eax, 0A       // EAX = EAX * 10
-    sub [ebx+00000050], eax // aplica o dano multiplicado
-    jmp danoreturn
-
-  DANO_INJPOINT:
-    jmp danomem
-    nop
-  danoreturn:
-  registersymbol(DANO_INJPOINT)
-
-  [DISABLE]
-  DANO_INJPOINT:
-    db 29 83 50 00 00 00
-  unregistersymbol(DANO_INJPOINT)
-  dealloc(danomem)`}
+  Outro exemplo:
+  00A1F22C: 89 4B 4C      (3 bytes) MOV [EBX+4C], ECX
+  Total: 3 bytes — MUITO PEQUENO para um JMP de 5 bytes!
+  Solução: incluir a próxima instrução também:
+  00A1F22F: EB 05         (2 bytes) JMP 00A1F236
+  Total: 3 + 2 = 5 bytes ✓ Agora funciona — mas lembre de incluir o JMP original na cave!`}
         />
 
-        <h2>Preservando Registradores</h2>
-        <AlertBox type="warning" title="Sempre preserve os registradores!">
-          Ao injetar código, você interrompe o fluxo do jogo. Se modificar registradores sem restaurá-los, você corrompe o estado do jogo e ele pode travar. Use PUSHAD/POPAD (x86) ou salve manualmente cada registrador que modificar.
+        <h2>Verificando e Testando a Injeção</h2>
+        <p>
+          Após executar o script de injeção, verifique o disassembler no endereço original — você deve ver um JMP para o endereço da sua caverna. Na caverna, você deve ver suas instruções seguidas de um JMP de retorno. Se qualquer coisa parecer errada, desative imediatamente o script (que executará o DISABLE e restaurará os bytes originais) antes de investigar.
+        </p>
+        <p>
+          Teste sistematicamente: (1) ative o script, (2) teste se o cheat funciona como esperado, (3) desative o script, (4) confirme que o comportamento original foi restaurado completamente. Se o jogo não crashou em nenhuma dessas etapas e o cheat funcionou, a injeção está correta.
+        </p>
+
+        <AlertBox type="warning" title="Bytes originais errados = crash garantido">
+          Se os bytes no DISABLE não correspondem exatamente aos bytes originais, o jogo vai crashar ou ter comportamento imprevisível quando você desativar o cheat. Sempre copie os bytes diretamente do disassembler, verificando byte por byte. Um erro de um único byte é suficiente para travar o processo.
         </AlertBox>
 
-        <CodeBlock
-          title="Template com preservação de registradores"
-          language="asm"
-          code={`meuCodigo:
-    pushad          // salva EAX, EBX, ECX, EDX, ESI, EDI, EBP, ESP
-    pushfd          // salva as flags (EFLAGS)
-    
-    // Seu código aqui — pode modificar qualquer registrador livremente
-    mov eax, 9999
-    mov [ebx+4C], eax
-    
-    popfd           // restaura as flags
-    popad           // restaura todos os registradores
-    
-    // Executa a instrução original (que copiamos aqui)
-    // [instrução original]
-    
-    jmp retorno`}
-        />
+        <AlertBox type="tip" title="Use o template de Code Injection do CE">
+          Em vez de escrever o structure do cave manualmente, use Template → Code Injection no Auto Assembler. O CE copia os bytes originais automaticamente e cria a structure básica. Você só precisa adicionar sua lógica de cheat no lugar correto.
+        </AlertBox>
       </PageContainer>
     );
   }

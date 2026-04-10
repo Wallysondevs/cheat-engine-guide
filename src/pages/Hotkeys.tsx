@@ -5,126 +5,126 @@ import { PageContainer } from "@/components/layout/PageContainer";
   export default function Hotkeys() {
     return (
       <PageContainer
-        title="Hotkeys"
-        subtitle="Configure atalhos de teclado para ativar cheats sem sair do jogo."
+        title="Hotkeys e Atalhos"
+        subtitle="Configure teclas de atalho para controlar seus cheats sem sair do jogo — indispensável para qualquer tabela profissional."
         difficulty="iniciante"
-        timeToRead="10 min"
+        timeToRead="14 min"
       >
+        <h2>Por que hotkeys são indispensáveis</h2>
         <p>
-          Hotkeys são atalhos de teclado que você configura no Cheat Engine para ativar ou desativar cheats enquanto joga — sem precisar alternar entre janelas. Você pode atribuir qualquer tecla ou combinação para qualquer ação.
+          Usar cheats sem hotkeys é fundamentalmente inconveniente. Você está no meio de uma batalha intensa, a vida cai para zero, e você precisa: pressionar Alt+Tab para sair do jogo (possivelmente causando uma pausa ou lag), clicar na janela do CE, marcar o checkbox do freeze de vida, e então Alt+Tab de volta ao jogo — que provavelmente já mostrou a tela de morte. Com hotkeys, você simplesmente pressiona F1 durante o jogo e o cheat ativa instantaneamente, sem jamais tirar os olhos da tela.
+        </p>
+        <p>
+          Hotkeys bem configuradas também permitem usar o Cheat Engine como um verdadeiro trainer — uma ferramenta que roda em background e responde a pressionamentos de tecla durante o jogo, da mesma forma que trainers comerciais (como os do WeMod) funcionam. A diferença é que você mesmo criou e controla tudo.
         </p>
 
-        <h2>Configurando Hotkeys em Endereços</h2>
-        <div className="not-prose grid grid-cols-1 gap-3 my-4">
-          {[
-            { n: "1", passo: "Clique com botão direito no endereço", desc: "Selecione um endereço na Address List e clique com o botão direito do mouse." },
-            { n: "2", passo: "Selecione 'Set hotkey'", desc: "Ou acesse via 'Toggle activation of this entry'." },
-            { n: "3", passo: "Pressione a tecla desejada", desc: "Qualquer tecla ou combinação: F1-F12, Numpad, Ctrl+tecla, etc." },
-            { n: "4", passo: "Escolha a ação", desc: "Toggle (ativa/desativa), Activate, Deactivate, ou Set value." },
-          ].map((item) => (
-            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
-              <div>
-                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <h2>Ações de Hotkey Disponíveis</h2>
-        <div className="overflow-x-auto my-4">
-          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
-            <thead className="bg-muted">
-              <tr>
-                <th className="p-3 text-left">Ação</th>
-                <th className="p-3 text-left">O que faz</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Toggle Activation", "Alterna entre ativo e inativo cada vez que a tecla é pressionada"],
-                ["Activate", "Ativa o freeze/script (checkbox marcado)"],
-                ["Deactivate", "Desativa o freeze/script (checkbox desmarcado)"],
-                ["Set value to X", "Define um valor específico ao pressionar, sem freeze contínuo"],
-                ["Increase value by X", "Adiciona X ao valor atual ao pressionar"],
-                ["Decrease value by X", "Subtrai X do valor atual ao pressionar"],
-              ].map(([acao, oqfaz], i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="p-3 font-medium text-sm">{acao}</td>
-                  <td className="p-3 text-muted-foreground text-sm">{oqfaz}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2>Hotkeys Globais da Tabela</h2>
+        <h2>Hotkeys de Endereço Individual</h2>
         <p>
-          Além dos hotkeys por endereço, você pode configurar hotkeys globais que executam ações em múltiplos endereços ou scripts de uma vez:
+          Cada endereço na Address List pode ter sua própria hotkey para controlar o freeze. Para configurar, clique com botão direito no endereço → "Set hotkey". Uma janela abre com dois campos principais:
+        </p>
+        <p>
+          O campo de tecla: clique nele e pressione a tecla que quer usar. O CE registra a tecla (ou combinação). Teclas de função (F1-F12) são as mais populares para hotkeys de jogo porque raramente conflitam com outros atalhos e são fáceis de alcançar. Mas você pode usar qualquer tecla, inclusive combinações com Ctrl, Alt ou Shift.
+        </p>
+        <p>
+          O campo de ação: um menu suspenso que define o que acontece quando a tecla é pressionada. As opções são: "Toggle activation" (alterna entre ativo e inativo — o uso mais comum), "Activate" (sempre ativa, nunca desativa), "Deactivate" (sempre desativa), e "Set value to X" (define o valor para um número específico sem freeze). Há também "Increase/Decrease value by X" para hotkeys que adicionam ou subtraem do valor atual.
+        </p>
+
+        <h2>Hotkeys Globais de Tabela</h2>
+        <p>
+          Além das hotkeys individuais de cada endereço, existe um sistema de hotkeys globais que podem executar ações complexas com uma única tecla. Acesse em Table → Table Hot Keys (ou Ctrl+H). Aqui você pode criar hotkeys que executam scripts Lua completos quando ativadas.
+        </p>
+        <p>
+          A vantagem das hotkeys globais é que uma única tecla pode ativar ou desativar múltiplos endereços ao mesmo tempo, ou executar lógica condicional. Por exemplo: uma hotkey de "God Mode" que ativa o freeze de vida, mana, e escudo ao mesmo tempo, ou uma hotkey que aplica um conjunto completo de buffs.
         </p>
         <CodeBlock
-          title="Configurando hotkeys globais"
-          language="text"
-          code={`Menu: Table → Table Hot Keys (Ctrl+H)
-
-  Na janela de Hot Keys:
-  1. Clique em "Add" para criar um novo hotkey
-  2. Pressione a tecla desejada
-  3. Configure a ação: ativar todos, executar script Lua, etc.
-
-  Exemplo de hotkey global:
-  F1 = Ativar todos os cheats (vida, mana, ouro, etc.)
-  F2 = Desativar todos os cheats
-  F3 = Toggle Speed Hack 2x`}
-        />
-
-        <h2>Hotkeys via Lua</h2>
-        <CodeBlock
-          title="Registrando hotkeys via script Lua"
+          title="Hotkey global que ativa múltiplos cheats"
           language="lua"
-          code={`-- Registrar hotkey via Lua no CE
-  local hotkey1 = createHotkey(function()
-    -- F1 pressionado: ativa vida infinita
-    local vida = getAddressList().getMemoryRecordByDescription("Vida")
-    if vida then
-      vida.Value = "9999"
-      vida.Active = true
-    end
-  end, VK_F1)
+          code={`-- Hotkey que ativa/desativa "God Mode" completo
+  local godModeAtivo = false
 
-  -- Hotkey com Ctrl+F1
-  local hotkey2 = createHotkey(function()
-    print("Ctrl+F1 pressionado")
-  end, VK_F1, false, true, false) -- (tecla, shift, ctrl, alt)`}
+  local function toggleGodMode()
+    godModeAtivo = not godModeAtivo
+    local al = getAddressList()
+    
+    -- Lista de descrições de endereços para incluir no god mode
+    local cheats = {"Vida Infinita", "Mana Infinita", "Escudo Infinito", "Stamina Infinita"}
+    
+    for _, nome in ipairs(cheats) do
+      local rec = al.getMemoryRecordByDescription(nome)
+      if rec then
+        rec.Active = godModeAtivo
+      end
+    end
+    
+    if godModeAtivo then
+      showMessage("God Mode ATIVADO")
+    else
+      showMessage("God Mode DESATIVADO")
+    end
+  end
+
+  -- Registra a hotkey F1
+  createHotkey(toggleGodMode, VK_F1)
+  print("F1 = Toggle God Mode")`}
         />
 
-        <AlertBox type="tip" title="Dica — Use Numpad para Hotkeys">
-          As teclas do Numpad (Numpad 1-9, Numpad +, -) são ótimas para hotkeys em jogos — raramente são usadas em jogos e não interferem com movimentos ou ações.
+        <h2>Códigos de Tecla Virtual (VK Codes)</h2>
+        <p>
+          Quando você cria hotkeys via Lua, precisa especificar as teclas usando seus códigos virtuais (Virtual Key codes). Os mais usados em scripts de CE:
+        </p>
+        <CodeBlock
+          title="Códigos VK mais usados no Cheat Engine"
+          language="lua"
+          code={`-- Teclas de função
+  VK_F1  = 0x70   VK_F2  = 0x71   VK_F3  = 0x72   VK_F4  = 0x73
+  VK_F5  = 0x74   VK_F6  = 0x75   VK_F7  = 0x76   VK_F8  = 0x77
+  VK_F9  = 0x78   VK_F10 = 0x79   VK_F11 = 0x7A   VK_F12 = 0x7B
+
+  -- Teclas numéricas (teclado numérico)
+  VK_NUMPAD0 = 0x60  VK_NUMPAD1 = 0x61  VK_NUMPAD2 = 0x62
+  VK_NUMPAD3 = 0x63  VK_NUMPAD4 = 0x64  VK_NUMPAD5 = 0x65
+  VK_NUMPAD6 = 0x66  VK_NUMPAD7 = 0x67  VK_NUMPAD8 = 0x68
+  VK_NUMPAD9 = 0x69
+
+  -- Teclas especiais
+  VK_INSERT = 0x2D  VK_DELETE = 0x2E  VK_HOME = 0x24  VK_END = 0x23
+  VK_PRIOR  = 0x21  -- Page Up
+  VK_NEXT   = 0x22  -- Page Down
+
+  -- Exemplo de uso:
+  createHotkey(minhaFuncao, VK_F5)              -- F5 simples
+  createHotkey(minhaFuncao, VK_F5, VK_SHIFT)   -- Shift+F5`}
+        />
+
+        <h2>Hotkeys com Teclas de Combinação</h2>
+        <p>
+          Para evitar conflitos com atalhos do jogo, usar combinações como Ctrl+F5 ou Alt+F5 é mais seguro que teclas simples. A criação via interface do CE: ao clicar no campo de tecla na janela de hotkey, você pode manter Ctrl, Alt ou Shift pressionado enquanto pressiona a tecla principal. O CE registra a combinação completa.
+        </p>
+        <p>
+          Via Lua: o segundo e terceiro argumentos do createHotkey especificam modificadores. Consulte a documentação do CE para os valores exatos de VK_CONTROL, VK_MENU (Alt) e VK_SHIFT.
+        </p>
+
+        <h2>Gerenciamento e Troubleshooting de Hotkeys</h2>
+        <p>
+          Se uma hotkey não responde, os problemas mais comuns são: (1) conflito com uma hotkey do próprio jogo que captura a tecla primeiro, (2) o jogo está rodando em modo exclusivo fullscreen que impede hotkeys externas, (3) o CE não tem privilégios de sistema suficientes para registrar hotkeys globais.
+        </p>
+        <p>
+          Para o problema de fullscreen exclusivo: tente rodar o jogo em modo Borderless Windowed (janela sem bordas) em vez de Fullscreen verdadeiro. Borderless Windowed compartilha o foco de forma diferente e geralmente permite que hotkeys externas funcionem.
+        </p>
+        <p>
+          Para privilégios: execute o Cheat Engine como Administrador (botão direito no ícone → "Executar como administrador"). Isso garante que o CE tem os direitos necessários para registrar hotkeys globais no sistema.
+        </p>
+        <p>
+          Para verificar quais hotkeys estão configuradas: vá em Table → Table Hot Keys para as hotkeys globais. Para hotkeys de endereços individuais, a lista na Address List não mostra as hotkeys diretamente — você precisa clicar direito em cada endereço e verificar.
+        </p>
+
+        <AlertBox type="tip" title="Teclas de função (F1-F12) são as mais confiáveis">
+          Use F1-F12 para suas hotkeys de cheat sempre que possível. Jogos raramente usam essas teclas para funções críticas (F5 às vezes é usado para save rápido, então prefira F9-F12). Evite letras e números que o jogo usa para controle do personagem.
         </AlertBox>
 
-        <AlertBox type="info" title="Hotkeys funcionam em segundo plano">
-          Os hotkeys do CE funcionam mesmo quando o CE está em segundo plano (em tela inteira no jogo). Você não precisa alternar para a janela do CE — basta pressionar a tecla configurada.
+        <AlertBox type="info" title="Hotkeys funcionam mesmo com o CE minimizado">
+          Uma vez configuradas, as hotkeys do CE continuam funcionando mesmo com a janela do CE minimizada ou movida para segundo plano. O CE corre como um processo ativo e monitora as teclas independentemente de qual janela está em foco — desde que o processo do jogo esteja em execução.
         </AlertBox>
-
-        <h2>Layout Recomendado de Hotkeys</h2>
-        <div className="not-prose grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
-          {[
-            { tecla: "F1", acao: "Vida infinita toggle" },
-            { tecla: "F2", acao: "Mana infinita toggle" },
-            { tecla: "F3", acao: "Ouro +1000" },
-            { tecla: "F4", acao: "XP +1000" },
-            { tecla: "F5", acao: "Speed 2x toggle" },
-            { tecla: "F6", acao: "Speed normal" },
-            { tecla: "F7", acao: "Munição infinita" },
-            { tecla: "F8", acao: "Desativar tudo" },
-          ].map((item) => (
-            <div key={item.tecla} className="border border-border rounded-xl p-3 bg-card text-center">
-              <div className="font-mono text-primary font-bold text-lg mb-1">{item.tecla}</div>
-              <div className="text-xs text-muted-foreground">{item.acao}</div>
-            </div>
-          ))}
-        </div>
       </PageContainer>
     );
   }
