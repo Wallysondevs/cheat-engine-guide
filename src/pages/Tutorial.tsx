@@ -1,83 +1,122 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function Tutorial() {
-  return (
-    <PageContainer
-      title="Tutorial Oficial — Passo a Passo"
-      subtitle="Guia completo para todos os 9 passos do tutorial integrado do Cheat Engine."
-      difficulty="iniciante"
-      timeToRead="15 min"
-    >
-      <AlertBox type="info" title="Tutorial do CE">
-        O Cheat Engine tem um tutorial integrado acessível em <strong>Help → Cheat Engine Tutorial</strong>. Este guia explica cada passo em detalhe, complementando o tutorial em Português.
-      </AlertBox>
+  export default function Tutorial() {
+    return (
+      <PageContainer
+        title="Tutorial Integrado"
+        subtitle="Complete o tutorial oficial do Cheat Engine para aprender os conceitos fundamentais na prática."
+        difficulty="iniciante"
+        timeToRead="20 min"
+      >
+        <p>
+          O Cheat Engine vem com um tutorial integrado — um programa de treinamento que simula um jogo com diferentes desafios de memória. Completar o tutorial é a melhor forma de aprender as técnicas fundamentais.
+        </p>
 
-      <h2>Como Abrir o Tutorial</h2>
-      <ol>
-        <li>Abra o Cheat Engine</li>
-        <li>Vá em <strong>Help → Cheat Engine Tutorial</strong></li>
-        <li>Um pequeno programa de tutorial será aberto</li>
-        <li>Conecte o CE ao processo "Tutorial-x86_64.exe"</li>
-      </ol>
+        <h2>Abrindo o Tutorial</h2>
+        <CodeBlock
+          title="Como abrir o tutorial do CE"
+          language="text"
+          code={`Opção 1: Help → Cheat Engine Tutorial (no menu principal)
+  Opção 2: Procure "Tutorial-i386.exe" ou "Tutorial-x86_64.exe" 
+           na pasta de instalação do CE
+           C:\Program Files\Cheat Engine 7.5\Tutorial-x86_64.exe
 
-      <h2>Passo 1 — Introdução</h2>
-      <p>
-        O tutorial começa com uma caixa de texto com um número aleatório. Sua tarefa é encontrar e modificar esse número. Clique em "Click me" para incrementar o valor aleatório e veja que ele muda.
-      </p>
-      <p><strong>Solução:</strong> Clique em "Click me", anote o valor, faça First Scan (Exact Value, 4 Bytes), clique novamente para mudar, anote o novo valor, faça Next Scan. Repita até restar 1 endereço. Modifique para 5000 e clique em "Click me" para avançar.</p>
+  Após abrir: anexe o CE ao processo do Tutorial
+  (ícone de computador → selecione Tutorial na lista)`}
+        />
 
-      <h2>Passo 2 — Valor Desconhecido</h2>
-      <p>
-        Há uma barra de saúde, mas o valor exato está oculto. Você precisa usar Unknown Initial Value.
-      </p>
-      <p><strong>Solução:</strong> First Scan (Unknown Initial Value), clique em "Hit me" para perder saúde, Next Scan (Decreased Value), repita até restar poucos resultados, identifique e modifique o endereço correto para 5000.</p>
+        <h2>Passos do Tutorial</h2>
+        <div className="not-prose grid grid-cols-1 gap-3 my-4">
+          {[
+            {
+              step: "Step 1 — Introdução",
+              desc: "Apresentação do tutorial. Leia as instruções e clique Next.",
+              tecnica: "Conceitual"
+            },
+            {
+              step: "Step 2 — Exact Value Scan",
+              desc: "Encontre o valor exato da vida (100). Faça a varredura, tome dano, faça Next Scan, modifique.",
+              tecnica: "Exact Value"
+            },
+            {
+              step: "Step 3 — Unknown Initial Value",
+              desc: "A barra de vida não mostra o número. Use Unknown Initial Value + Changed/Unchanged para encontrar.",
+              tecnica: "Unknown Value"
+            },
+            {
+              step: "Step 4 — Float",
+              desc: "O valor está armazenado como ponto flutuante (float). Mude o tipo de scan para Float.",
+              tecnica: "Float Scan"
+            },
+            {
+              step: "Step 5 — Code Finder",
+              desc: "O endereço muda constantemente. Use o Code Finder para encontrar e modificar a instrução que escreve o valor.",
+              tecnica: "Code Finder / AOB"
+            },
+            {
+              step: "Step 6 — Pointer",
+              desc: "O endereço muda ao clicar em 'Change Pointer'. Use Pointer Scan para encontrar o ponteiro estático.",
+              tecnica: "Pointer"
+            },
+            {
+              step: "Step 7 — Code Injection",
+              desc: "Injete código Assembly para modificar o comportamento — a vida nunca decresce.",
+              tecnica: "Code Injection"
+            },
+            {
+              step: "Step 8 — Multilevel Pointer",
+              desc: "Um ponteiro com múltiplos offsets. Siga a cadeia manualmente ou use o Pointer Scanner.",
+              tecnica: "Multi-Level Pointer"
+            },
+            {
+              step: "Step 9 — Shared Code",
+              desc: "A instrução que reduz a vida é compartilhada entre o jogador e os inimigos. Modifique apenas a do jogador.",
+              tecnica: "Code Injection Avançada"
+            },
+          ].map((item) => (
+            <div key={item.step} className="border border-border rounded-xl p-4 bg-card">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-bold text-sm">{item.step}</h4>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{item.tecnica}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
+            </div>
+          ))}
+        </div>
 
-      <h2>Passo 3 — Freeze</h2>
-      <p>
-        O valor agora diminui automaticamente. Você precisa travá-lo.
-      </p>
-      <p><strong>Solução:</strong> Encontre o endereço como nos passos anteriores, adicione-o à Address List, defina o valor para 5000 e ative o Freeze (marque o checkbox). O valor ficará travado.</p>
+        <h2>Dicas para Completar o Tutorial</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Step</th>
+                <th className="p-3 text-left">Dica</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Step 3", "Clique em 'Hit Me' várias vezes — use 'Decreased Value' após cada clique, 'Unchanged' quando não clicar"],
+                ["Step 4", "Troque o tipo para Float antes de escanear. O valor é 100.0 mas está em formato float."],
+                ["Step 5", "Use 'Find out what writes' no endereço → a instrução aparece → clique em 'Change value of instruction'"],
+                ["Step 6", "Pointer Scan → reinicie o tutorial (botão restart) → rescan → o ponteiro válido permanece"],
+                ["Step 7", "No Code Injection, mude 'sub' (subtrair) para 'add' (somar) — você recupera vida ao invés de perder"],
+                ["Step 9", "Use registradores para verificar: EBX+0x? aponta para o jogador vs inimigo. Compare antes de injetar."],
+              ].map(([step, dica], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-mono text-primary text-sm">{step}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{dica}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <h2>Passo 4 — Ponteiros</h2>
-      <p>
-        O endereço muda a cada clique em "Restart Game". Você precisa encontrar um ponteiro permanente.
-      </p>
-      <p><strong>Solução:</strong> Encontre o endereço, clique com botão direito → "Find what writes", tome dano para acionar a escrita, veja a instrução, note o registrador (ex: ESI), encontre o ponteiro para ESI, adicione à Address List como ponteiro com o offset correto.</p>
-
-      <h2>Passo 5 — Code Injection</h2>
-      <p>
-        Você precisa usar Code Injection para fazer a saúde aumentar em vez de diminuir.
-      </p>
-      <p><strong>Solução:</strong> Encontre a instrução que subtrai saúde via "What writes", abra no disassembler, use Template → Code Injection para criar uma cave que inverta a operação (sub → add).</p>
-
-      <h2>Passo 6 — Ponteiro Multinível</h2>
-      <p>
-        Cadeia de ponteiros de múltiplos níveis. Use o Pointer Scanner para encontrar o caminho completo.
-      </p>
-      <p><strong>Solução:</strong> Encontre o endereço do valor, abra o Pointer Scanner, configure max level = 4, escaneie, reinicie o jogo para validar quais ponteiros funcionam nas duas sessões.</p>
-
-      <h2>Passo 7 — Shared Code</h2>
-      <p>
-        O código que modifica a saúde é compartilhado entre o jogador e os inimigos. Você precisa modificar apenas o do jogador.
-      </p>
-      <p><strong>Solução:</strong> Encontre a instrução compartilhada, na cave adicione uma condição que verifica se o ponteiro atual é o do jogador (compare ESI com o endereço base do jogador). Se for, ignore o dano.</p>
-
-      <h2>Passo 8 — Multilevel Pointer Avançado</h2>
-      <p>
-        Ponteiro de nível ainda mais profundo com estruturas aninhadas.
-      </p>
-      <p><strong>Solução:</strong> Similar ao Passo 6, mas com mais offsets. Use o Pointer Scanner com level = 5-6 e compare entre sessões.</p>
-
-      <h2>Passo 9 — Registro Personalizado</h2>
-      <p>
-        O tutorial final! Você recebe um código ao completar todos os passos.
-      </p>
-      <p><strong>Solução:</strong> Conclua todos os passos anteriores. O código aparecerá no campo de texto. Anote-o como registro do seu progresso!</p>
-
-      <AlertBox type="success" title="Parabéns!">
-        Ao completar todos os 9 passos do tutorial, você dominou os fundamentos do Cheat Engine. Agora você está pronto para aplicar esses conhecimentos em qualquer jogo single-player!
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <AlertBox type="tip" title="Refaça o Tutorial Várias Vezes">
+          O tutorial do CE é curto mas denso. Cada vez que você refaz, entende algo novo. Tente completar cada passo de formas diferentes — sem o Pointer Scanner, ou escrevendo o Assembly manualmente.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
