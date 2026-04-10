@@ -1,84 +1,92 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
-import { Search, Database, Bug, Code2, Terminal } from "lucide-react";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function Introducao() {
-  return (
-    <PageContainer
-      title="Cheat Engine"
-      subtitle="O mais poderoso editor de memória de jogos do mundo — aprenda do zero ao avançado em Português Brasileiro."
-      difficulty="iniciante"
-      timeToRead="8 min"
-    >
-      <AlertBox type="info" title="O que você vai aprender">
-        Este guia cobre tudo sobre o Cheat Engine: desde varredura básica de memória até scripts Lua avançados, injeção de código e criação de trainers — tudo explicado em Português.
-      </AlertBox>
+  export default function Introducao() {
+    return (
+      <PageContainer
+        title="Introdução ao Cheat Engine"
+        subtitle="O que é o Cheat Engine, para que serve e como ele funciona por baixo dos panos."
+        difficulty="iniciante"
+        timeToRead="10 min"
+      >
+        <p>
+          O <strong>Cheat Engine</strong> é uma ferramenta de código aberto para modificar jogos em tempo real. Desenvolvida por Eric "Dark Byte" Heijnen desde 2000, é a ferramenta mais poderosa e versátil para engenharia reversa de jogos no Windows.
+        </p>
 
-      <h2>O que é o Cheat Engine?</h2>
-      <p>
-        O <strong>Cheat Engine</strong> é uma ferramenta open-source de modificação de memória, criada por Eric Heijnen (Dark Byte) em 2000. Ele permite que você inspecione e modifique a memória de processos em execução — principalmente jogos — para alterar valores como vida, munição, velocidade e muito mais.
-      </p>
-      <p>
-        Mas o Cheat Engine vai muito além de simples "cheats". É uma plataforma completa de:
-      </p>
-      <ul>
-        <li><strong>Análise de memória</strong> — varredura e localização de valores em tempo real</li>
-        <li><strong>Debugging</strong> — breakpoints, disassembler e inspeção de registradores</li>
-        <li><strong>Code injection</strong> — injeção de código assembly diretamente em processos</li>
-        <li><strong>Scripting Lua</strong> — automação completa com a API interna do CE</li>
-        <li><strong>Análise de ponteiros</strong> — engenharia reversa de estruturas de dados</li>
-      </ul>
-
-      <h2>Para que serve?</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6 not-prose">
-        {[
-          { icon: <Search className="w-5 h-5" />, title: "Jogos Single Player", desc: "Altere vida, dinheiro, munição e qualquer valor em jogos offline." },
-          { icon: <Bug className="w-5 h-5" />, title: "Engenharia Reversa", desc: "Entenda como softwares funcionam internamente, analise estruturas de dados." },
-          { icon: <Code2 className="w-5 h-5" />, title: "Desenvolvimento", desc: "Teste e debugue seus próprios programas, encontre bugs de memória." },
-          { icon: <Terminal className="w-5 h-5" />, title: "Educação", desc: "Aprenda arquitetura de computadores, assembly e funcionamento da memória." },
-        ].map((item, i) => (
-          <div key={i} className="border border-border rounded-lg p-4 bg-card">
-            <div className="text-primary mb-2">{item.icon}</div>
-            <div className="font-semibold text-sm mb-1">{item.title}</div>
-            <div className="text-xs text-muted-foreground">{item.desc}</div>
-          </div>
-        ))}
-      </div>
-
-      <AlertBox type="warning" title="Uso Ético">
-        O Cheat Engine é uma ferramenta educacional e deve ser usado apenas em jogos single-player ou em softwares nos quais você tem permissão para fazê-lo. Usar em jogos online viola os termos de serviço e pode resultar em banimento permanente.
-      </AlertBox>
-
-      <h2>História e Versões</h2>
-      <p>
-        O Cheat Engine foi lançado em <strong>2000</strong> pelo desenvolvedor belga Dark Byte. Ao longo dos anos tornou-se a referência mundial para modificação de memória de jogos.
-      </p>
-      <div className="space-y-3 my-4 not-prose">
-        {[
-          { version: "CE 1.x", year: "2000–2002", desc: "Versão inicial com scanner básico de 4 bytes" },
-          { version: "CE 5.x", year: "2008–2012", desc: "Introdução do debugger, pointer scanner e scripts Lua" },
-          { version: "CE 6.x", year: "2013–2018", desc: "Suporte a 64 bits, DBVM (hypervisor), VEH debugger" },
-          { version: "CE 7.x", year: "2019–hoje", desc: "Melhorias no disassembler, Mono support, ARM64 experimental" },
-        ].map((v, i) => (
-          <div key={i} className="flex gap-3 items-start border-l-2 border-primary/30 pl-3">
-            <div>
-              <div className="text-sm font-semibold">{v.version} <span className="text-muted-foreground font-normal">({v.year})</span></div>
-              <div className="text-sm text-muted-foreground">{v.desc}</div>
+        <h2>O que você pode fazer com o Cheat Engine</h2>
+        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+          {[
+            { recurso: "Modificar Valores", desc: "Altere vida, ouro, XP, munição, velocidade e qualquer outro valor armazenado na memória do jogo." },
+            { recurso: "Freeze de Valores", desc: "Trave valores para que nunca diminuam — vida infinita, munição infinita, tempo congelado." },
+            { recurso: "Speed Hack", desc: "Acelere ou desacelere o tempo de execução do jogo — útil para grinding ou estudar mecânicas." },
+            { recurso: "Injeção de Código", desc: "Modifique o comportamento do jogo injetando instruções Assembly diretamente no executável em memória." },
+            { recurso: "Pointer Scanner", desc: "Encontre ponteiros estáticos para tornar cheats permanentes entre sessões de jogo." },
+            { recurso: "Lua Scripting", desc: "Automatize cheats complexos com scripts Lua — da teleportação a trainers completos." },
+          ].map((item) => (
+            <div key={item.recurso} className="border border-border rounded-xl p-4 bg-card">
+              <h4 className="font-bold text-sm mb-1 text-primary">{item.recurso}</h4>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <h2>Requisitos do Sistema</h2>
-      <ul>
-        <li><strong>Sistema Operacional:</strong> Windows 7/8/10/11 (32 ou 64 bits)</li>
-        <li><strong>RAM:</strong> mínimo 512 MB (recomendado 2 GB+)</li>
-        <li><strong>Antivírus:</strong> adicione o CE à lista de exceções — falso positivo comum</li>
-      </ul>
+        <h2>Como o Cheat Engine Funciona</h2>
+        <p>
+          O CE funciona como um <strong>debugger de processo</strong>: ele se anexa a um processo em execução (o jogo) e ganha acesso à memória dele. Com isso, pode ler, escrever e monitorar qualquer valor em memória.
+        </p>
+        <CodeBlock
+          title="Fluxo básico de uso"
+          language="text"
+          code={`1. Abra o jogo normalmente
+  2. Abra o Cheat Engine
+  3. Clique no ícone de computador (canto superior esquerdo)
+  4. Selecione o processo do jogo na lista
+  5. Configure o tipo de dado e valor a buscar
+  6. Clique em "First Scan"
+  7. Cause mudança no jogo (tome dano, gaste ouro, etc.)
+  8. Use "Next Scan" com o novo valor
+  9. Repita até encontrar o endereço correto
+  10. Adicione à Address List e modifique`}
+        />
 
-      <AlertBox type="tip" title="Dica de Iniciante">
-        Comece pelo tutorial interno do Cheat Engine (menu Help → Cheat Engine Tutorial). Ele ensina os conceitos básicos de forma prática e interativa, diretamente dentro do programa.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+        <h2>Terminologia Essencial</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Termo</th>
+                <th className="p-3 text-left">Definição</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Processo", "O programa em execução (o jogo). O CE se 'anexa' a ele."],
+                ["Memória RAM", "Onde o jogo armazena todos os dados em tempo real — vida, posição, inventário."],
+                ["Endereço de memória", "Um número hexadecimal que indica onde na RAM um valor está armazenado."],
+                ["Varredura (Scan)", "Busca por valores específicos em toda a memória do processo."],
+                ["Address List", "Lista onde você adiciona endereços que encontrou para monitorar/modificar."],
+                ["Freeze", "Manter um valor constante, mesmo que o jogo tente alterá-lo."],
+                ["Ponteiro", "Um endereço que contém o endereço do dado real — necessário para cheats persistentes."],
+                ["Assembly", "Linguagem de baixo nível usada para injeção de código avançada no CE."],
+              ].map(([termo, def], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-mono text-primary text-sm">{termo}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{def}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <AlertBox type="info" title="Cheat Engine é open source">
+          O código-fonte do CE está disponível no GitHub (github.com/cheat-engine/cheat-engine). Ele é gratuito e tem uma comunidade enorme. O download oficial é em cheatengine.org — evite versões de sites de terceiros que podem conter malware.
+        </AlertBox>
+
+        <AlertBox type="warning" title="Use com responsabilidade">
+          O Cheat Engine é proibido em jogos online multiplayer pela maioria dos desenvolvedores. Use apenas em jogos single-player ou em ambientes onde cheats são permitidos. Respeite outros jogadores.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
