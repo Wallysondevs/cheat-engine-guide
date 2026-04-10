@@ -1,89 +1,101 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function PrimeiraVarredura() {
-  return (
-    <PageContainer
-      title="Primeira Varredura"
-      subtitle="Aprenda o fluxo básico para encontrar valores na memória de um jogo."
-      difficulty="iniciante"
-      timeToRead="10 min"
-    >
-      <AlertBox type="info" title="O Processo Básico">
-        A lógica de varredura é simples: você sabe o valor atual (ex: 100 de vida), faz uma busca, o jogo muda o valor (leva dano), você faz uma nova busca pelo novo valor, e repete até sobrar poucos endereços.
-      </AlertBox>
+  export default function PrimeiraVarredura() {
+    return (
+      <PageContainer
+        title="Primeira Varredura"
+        subtitle="Como realizar sua primeira varredura no Cheat Engine e encontrar o endereço de um valor no jogo."
+        difficulty="iniciante"
+        timeToRead="10 min"
+      >
+        <p>
+          A varredura (scan) é o coração do Cheat Engine. Ela percorre toda a memória do processo em busca de valores que correspondem aos seus critérios. A primeira varredura estabelece a base — as próximas varreduras refinam até chegar ao endereço exato.
+        </p>
 
-      <h2>Fluxo Passo a Passo</h2>
+        <h2>Configurando a Varredura</h2>
+        <div className="overflow-x-auto my-4">
+          <table className="w-full text-sm border border-border rounded-xl overflow-hidden">
+            <thead className="bg-muted">
+              <tr>
+                <th className="p-3 text-left">Campo</th>
+                <th className="p-3 text-left">O que configurar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Value", "O valor que você quer buscar. Para vida = 100, digite 100."],
+                ["Scan Type", "Exact Value para valores exatos. Veja outros tipos na página Tipos de Varredura."],
+                ["Value Type", "4 Bytes para inteiros normais. Float para decimais. Veja Tipos de Dados."],
+                ["Hex", "Marque se quiser digitar o valor em hexadecimal (ex: FF para 255)."],
+              ].map(([campo, oq], i) => (
+                <tr key={i} className="border-t border-border">
+                  <td className="p-3 font-mono text-primary text-sm">{campo}</td>
+                  <td className="p-3 text-muted-foreground text-sm">{oq}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <h3>Passo 1: Abrir o Processo</h3>
-      <ol>
-        <li>Abra o jogo que deseja modificar</li>
-        <li>No Cheat Engine, clique no ícone de computador (canto superior esquerdo)</li>
-        <li>Selecione o processo do jogo na lista</li>
-        <li>Clique em <strong>"Open"</strong></li>
-      </ol>
+        <h2>Realizando a Primeira Varredura</h2>
+        <div className="not-prose grid grid-cols-1 gap-3 my-4">
+          {[
+            { n: "1", passo: "Anexe o CE ao processo", desc: "Clique no ícone de computador → selecione o jogo na lista de processos." },
+            { n: "2", passo: "Note o valor atual no jogo", desc: "Exemplo: sua vida está em 100. Este é o valor que você vai buscar." },
+            { n: "3", passo: "Configure o scan", desc: "Value Type: 4 Bytes, Scan Type: Exact Value, Value: 100." },
+            { n: "4", passo: "Clique em First Scan", desc: "O CE varre toda a memória. Pode retornar milhares de resultados — isso é normal." },
+            { n: "5", passo: "Mude o valor no jogo", desc: "Tome dano (agora a vida está em 90, por exemplo)." },
+            { n: "6", passo: "Clique em Next Scan com o novo valor", desc: "Digite 90 e clique Next Scan. O CE filtra apenas endereços que mudaram de 100 para 90." },
+            { n: "7", passo: "Repita até poucos resultados", desc: "Continue tomando dano e fazendo Next Scan. Em 3-5 ciclos, deve restar 1-3 endereços." },
+            { n: "8", passo: "Adicione à Address List", desc: "Selecione os endereços restantes e pressione Enter ou duplo clique." },
+          ].map((item) => (
+            <div key={item.n} className="flex gap-3 p-3 border border-border rounded-xl bg-card">
+              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">{item.n}</span>
+              <div>
+                <h4 className="font-bold text-sm mb-0.5">{item.passo}</h4>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-      <h3>Passo 2: Configurar o Scan</h3>
-      <ol>
-        <li>No campo <strong>Value Type</strong>, selecione <strong>"4 Bytes"</strong> (começa por aqui)</li>
-        <li>No campo <strong>Scan Type</strong>, selecione <strong>"Exact Value"</strong></li>
-        <li>No campo <strong>Value</strong>, digite o valor atual que quer procurar (ex: <code>100</code> para 100 de vida)</li>
-      </ol>
+        <h2>Exemplo Prático: Vida em um RPG</h2>
+        <CodeBlock
+          title="Passo a passo completo"
+          language="text"
+          code={`Situação: RPG com vida atual = 150/200
 
-      <h3>Passo 3: Primeira Varredura</h3>
-      <ol>
-        <li>Clique em <strong>"First Scan"</strong></li>
-        <li>Aguarde — o CE vai varrer toda a memória do processo</li>
-        <li>Na lista de resultados, provavelmente aparecerão centenas ou milhares de endereços com o valor 100</li>
-      </ol>
+  First Scan:  Exact Value, 4 Bytes, Value = 150
+  [5.234.891 resultados — normal!]
 
-      <AlertBox type="warning" title="Muitos Resultados?">
-        É completamente normal ter milhares de resultados na primeira varredura. O objetivo das próximas varreduras é filtrar progressivamente até encontrar o endereço correto.
-      </AlertBox>
+  → Entre em combate, tome 30 de dano → vida = 120
 
-      <h3>Passo 4: Mudar o Valor no Jogo</h3>
-      <p>
-        Volte ao jogo e faça algo para mudar o valor que você está buscando:
-      </p>
-      <ul>
-        <li>Se é vida: tome dano para diminuir</li>
-        <li>Se é munição: atire algumas vezes</li>
-        <li>Se é dinheiro: compre algum item</li>
-      </ul>
-      <p>
-        Observe o novo valor. Se tinha 100 de vida e tomou 20 de dano, agora tem 80.
-      </p>
+  Next Scan:  Exact Value, Value = 120
+  [143 resultados — bem menos!]
 
-      <h3>Passo 5: Next Scan</h3>
-      <ol>
-        <li>Volte ao Cheat Engine</li>
-        <li>No campo Value, digite o <strong>novo valor</strong> (ex: <code>80</code>)</li>
-        <li>Clique em <strong>"Next Scan"</strong></li>
-        <li>O CE filtra os resultados, mostrando apenas os endereços que mudaram para 80</li>
-      </ol>
+  → Tome mais 20 de dano → vida = 100
 
-      <h3>Passo 6: Repita até Encontrar</h3>
-      <p>
-        Repita os passos 4 e 5 (mudar valor no jogo → Next Scan) até restar poucos endereços (idealmente 1 a 5).
-      </p>
+  Next Scan:  Exact Value, Value = 100
+  [3 resultados]
 
-      <h3>Passo 7: Identificar o Endereço Correto</h3>
-      <ol>
-        <li>Com poucos endereços na lista, clique duplo em cada um para adicioná-lo à lista de endereços</li>
-        <li>Tente modificar o valor (clique duplo na coluna Value)</li>
-        <li>O endereço correto mudará o valor no jogo imediatamente</li>
-      </ol>
+  → Cure 50 de vida → vida = 150
 
-      <AlertBox type="success" title="Endereço Encontrado!">
-        Quando você modifica um endereço e o jogo reflete a mudança instantaneamente, você encontrou o endereço correto. Agora você pode dar um nome a ele, ativar Freeze e salvar na tabela.
-      </AlertBox>
+  Next Scan:  Exact Value, Value = 150
+  [1 resultado! ← este é o endereço]
 
-      <h2>Dicas para Varreduras Rápidas</h2>
-      <ul>
-        <li>Quanto mais o valor mudar entre varreduras, menos falsos positivos</li>
-        <li>Valores muito comuns (como 1, 0, 100) geram mais resultados inicialmente</li>
-        <li>Se tiver muitos resultados após várias varreduras, tente <strong>"Changed Value"</strong> ou <strong>"Decreased Value"</strong></li>
-      </ul>
-    </PageContainer>
-  );
-}
+  Duplo clique → modifique para 9999 → vida infinita!`}
+        />
+
+        <AlertBox type="tip" title="Dica — Selecione Todos e Teste">
+          Quando restar entre 3 e 15 resultados, selecione todos (Ctrl+A) e adicione à lista. Modifique todos ao mesmo tempo para 9999 e veja qual valor muda no jogo — esse é o endereço correto.
+        </AlertBox>
+
+        <AlertBox type="info" title="Muitos resultados após várias scans?">
+          Se ainda restar centenas de resultados após 5+ varreduras, tente mudar o tipo de dado (Float, 2 Bytes, Double) ou use "Changed/Unchanged Value" em vez de valores exatos. O jogo pode usar um formato diferente.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
