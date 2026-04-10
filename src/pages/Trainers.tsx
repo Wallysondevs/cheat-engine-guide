@@ -1,101 +1,119 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { AlertBox } from "@/components/ui/AlertBox";
-import { CodeBlock } from "@/components/ui/CodeBlock";
+  import { AlertBox } from "@/components/ui/AlertBox";
+  import { CodeBlock } from "@/components/ui/CodeBlock";
 
-export default function Trainers() {
-  return (
-    <PageContainer
-      title="Criar Trainers"
-      subtitle="Como criar executáveis trainers standalone usando o Cheat Engine Trainer Maker."
-      difficulty="avançado"
-      timeToRead="10 min"
-    >
-      <AlertBox type="info" title="O que é um Trainer?">
-        Um trainer é um programa separado que você roda junto com o jogo. Ao pressionar hotkeys no trainer, cheats são aplicados ao processo do jogo. É a forma mais distribuível de um cheat.
-      </AlertBox>
+  export default function Trainers() {
+    return (
+      <PageContainer
+        title="Criando Trainers"
+        subtitle="Como criar um trainer executável standalone usando o Cheat Engine — distribua seus cheats sem precisar do CE."
+        difficulty="avançado"
+        timeToRead="14 min"
+      >
+        <p>
+          Trainers são programas executáveis (.exe) que aplicam cheats em jogos automaticamente. Com o Cheat Engine, você pode criar trainers completos com interface gráfica, sem que o usuário final precise instalar o CE.
+        </p>
 
-      <h2>Opção 1 — Trainer via Lua + GUI</h2>
-      <p>
-        A forma mais rápida de criar um trainer usando o Cheat Engine é com Lua e forms:
-      </p>
-      <CodeBlock
-        title="Trainer Básico em Lua"
-        language="lua"
-        code={`
--- Criar janela do trainer
-local form = createForm(false)
-form.Caption = "Super Trainer v1.0"
-form.Width = 350
-form.Height = 280
-form.Position = poScreenCenter
+        <h2>O que é um Trainer?</h2>
+        <div className="not-prose grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+          {[
+            { aspecto: "Para o usuário final", desc: "Um programa simples com botões e hotkeys. Abre junto com o jogo e aplica os cheats com um clique ou tecla." },
+            { aspecto: "Por baixo dos panos", desc: "Um executável que usa as mesmas técnicas do CE: attach ao processo, write à memória, code injection." },
+            { aspecto: "Distribuição", desc: "Pode ser compartilhado como um único .exe — não requer CE instalado. Sites como GameCopyWorld e GCW hospedam trainers." },
+            { aspecto: "Atualização", desc: "Cada update do jogo pode quebrar o trainer. Endereços mudam, offsets mudam. AOB-based trainers são mais resistentes." },
+          ].map((item) => (
+            <div key={item.aspecto} className="border border-border rounded-xl p-4 bg-card">
+              <h4 className="font-bold text-sm mb-1 text-primary">{item.aspecto}</h4>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
+            </div>
+          ))}
+        </div>
 
--- Labels de status
-local lblStatus = createLabel(form)
-lblStatus.Caption = "Conectando ao jogo..."
-lblStatus.Left = 10
-lblStatus.Top = 10
-lblStatus.Width = 330
+        <h2>Usando o Trainer Maker do CE</h2>
+        <CodeBlock
+          title="Acessando o Trainer Maker"
+          language="text"
+          code={`Menu: Tools → Trainer Maker
 
--- Conectar ao processo
-local function conectar()
-  local processos = getProcessList()
-  if processos["game.exe"] then
-    openProcess("game.exe")
-    lblStatus.Caption = "Conectado: game.exe"
-    return true
+  O Trainer Maker permite:
+  1. Criar a interface gráfica (botões, labels, hotkeys)
+  2. Associar cada botão a um cheat da tabela .CT
+  3. Configurar o executável final (nome, ícone, version info)
+  4. Compilar e gerar o .exe standalone
+
+  Pré-requisito: ter uma tabela .CT completa e testada`}
+        />
+
+        <h2>Trainer em Lua (Abordagem Recomendada)</h2>
+        <p>
+          A forma mais flexível de criar trainers no CE é usar Lua com a API de UI do CE:
+        </p>
+        <CodeBlock
+          title="Trainer completo com interface Lua"
+          language="lua"
+          code={`-- Trainer simples com interface gráfica
+  local form = createForm()
+  form.Caption = "Meu Trainer - v1.0"
+  form.Width = 300
+  form.Height = 250
+
+  -- Função auxiliar para criar botão
+  local function criarBotao(parent, texto, x, y, callback)
+    local btn = createButton(parent)
+    btn.Caption = texto
+    btn.Left = x
+    btn.Top = y
+    btn.Width = 250
+    btn.Height = 35
+    btn.OnClick = callback
+    return btn
   end
-  lblStatus.Caption = "game.exe não encontrado!"
-  return false
-end
 
--- Botão Vida Infinita
-local btnVida = createButton(form)
-btnVida.Caption = "[F1] Vida Infinita"
-btnVida.Left = 10
-btnVida.Top = 40
-btnVida.Width = 320
-btnVida.Height = 30
-btnVida.OnClick = function()
-  if not conectar() then return end
-  writeInteger(resolveAddress("game.exe+0xA1B230,4C"), 9999)
-  showMessage("Vida: 9999")
-end
+  -- Botão Vida Infinita
+  criarBotao(form, "F1 - Vida Infinita", 20, 20, function()
+    writeInteger(getAddress("game.exe") + 0x123ABC, 9999)
+    print("Vida definida para 9999")
+  end)
 
--- Botão Speed Hack
-local btnSpeed = createButton(form)
-btnSpeed.Caption = "[F2] Speed 2x"
-btnSpeed.Left = 10
-btnSpeed.Top = 80
-btnSpeed.Width = 320
-btnSpeed.Height = 30
-btnSpeed.OnClick = function()
-  speedhack_setSpeed(2.0)
-end
+  -- Botão Ouro Infinito
+  criarBotao(form, "F2 - Ouro Infinito", 20, 65, function()
+    writeInteger(getAddress("game.exe") + 0x456DEF, 999999)
+    print("Ouro definido para 999999")
+  end)
 
--- Registrar hotkeys
-registerHotkey(VK_F1, function() btnVida.OnClick(nil) end)
-registerHotkey(VK_F2, function() btnSpeed.OnClick(nil) end)
+  -- Hotkeys
+  createHotkey(function() writeInteger(getAddress("game.exe") + 0x123ABC, 9999) end, VK_F1)
+  createHotkey(function() writeInteger(getAddress("game.exe") + 0x456DEF, 999999) end, VK_F2)
 
-conectar()
-form.show()
-        `}
-      />
+  form.show()`}
+        />
 
-      <h2>Opção 2 — CE Trainer Creator</h2>
-      <p>
-        O Cheat Engine tem um criador de trainers integrado em <strong>Tools → Trainer Creator</strong>. Ele gera um executável <code>.exe</code> a partir de uma tabela <code>.CT</code>:
-      </p>
-      <ol>
-        <li>Configure sua tabela com todos os cheats e hotkeys</li>
-        <li>Vá em <strong>Tools → Trainer Creator</strong></li>
-        <li>Selecione um template visual (há alguns incluídos)</li>
-        <li>Configure nome, ícone e informações do trainer</li>
-        <li>Clique em <strong>Generate</strong> para criar o <code>.exe</code></li>
-      </ol>
+        <h2>Compilando o Trainer para .exe Standalone</h2>
+        <CodeBlock
+          title="Passos para gerar o executável"
+          language="text"
+          code={`1. Crie e teste o script Lua ou a tabela .CT completamente
+  2. Abra o Trainer Maker (Tools → Trainer Maker)
+  3. Configure:
+     - Nome do trainer e versão
+     - Ícone personalizado (opcional)
+     - Processo alvo (nome do .exe do jogo)
+     - Cheats da tabela a incluir
+  4. Clique em "Create Trainer"
+  5. O CE gera um .exe standalone que pode ser distribuído
 
-      <AlertBox type="warning" title="Antivírus e Trainers">
-        Executáveis de trainers são quase universalmente detectados por antivírus, pois usam técnicas de injeção de memória. Distribua sempre com aviso sobre falso positivo, e prefira compartilhar como tabela <code>.CT</code> quando possível.
-      </AlertBox>
-    </PageContainer>
-  );
-}
+  Alternativa: Use o CETrainer Generator (ferramenta externa)
+  que oferece mais opções de personalização de interface.`}
+        />
+
+        <AlertBox type="warning" title="Antivírus podem flagar trainers">
+          Executáveis de trainer frequentemente são detectados como malware por antivírus — não porque sejam vírus, mas porque usam técnicas similares (modificação de memória de outro processo). Adicione ao whitelist ou desative temporariamente ao testar.
+        </AlertBox>
+
+        <AlertBox type="tip" title="AOB-based Trainers são mais duráveis">
+          Trainers baseados em Array of Bytes (AOB scan) em vez de endereços absolutos funcionam por mais tempo após updates do jogo. O CE busca o padrão de bytes na memória, então mesmo que o endereço mude, o padrão continua sendo encontrado.
+        </AlertBox>
+      </PageContainer>
+    );
+  }
+  
