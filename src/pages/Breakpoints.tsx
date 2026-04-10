@@ -98,7 +98,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
           Um problema comum com breakpoints em código de jogo é que eles disparam com muita frequência. Se a instrução que escreve a vida for chamada 60 vezes por segundo, seu breakpoint vai pausar o jogo a cada poucos segundos mesmo quando você não quer. A solução são os conditional breakpoints — breakpoints que pausam apenas quando uma condição específica é verdadeira.
         </p>
         <p>
-          Para adicionar uma condição, clique com botão direito no breakpoint já configurado → "Set condition" (ou veja em Debug → Breakpoints List → selecione o breakpoint → Edit). Você pode escrever uma condição em Lua que retorna true quando o breakpoint deve pausar: por exemplo, "EAX == 0" pausaria apenas quando o dano é zero, ou "readInteger(EBX+0x4C) < 20" pausaria apenas quando a vida cair abaixo de 20.
+          Para adicionar uma condição, clique com botão direito no breakpoint já configurado → "Set condition" (ou veja em Debug → Breakpoints List → selecione o breakpoint → Edit). Você pode escrever uma condição em Lua que retorna true quando o breakpoint deve pausar: por exemplo, "EAX == 0" pausaria apenas quando o dano é zero, ou "readInteger(EBX+0x4C) &lt; 20" pausaria apenas quando a vida cair abaixo de 20.
         </p>
 
         <AlertBox type="warning" title="Breakpoints pausam o processo inteiro, incluindo threads">
