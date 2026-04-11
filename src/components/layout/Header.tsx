@@ -1,41 +1,39 @@
-import { useState } from "react";
-import { Moon, Sun, Menu, X, Crosshair } from "lucide-react";
-import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
+import { Menu, Moon, Sun } from "lucide-react";
+  import { useTheme } from "@/hooks/use-theme";
 
-interface HeaderProps {
-  onMenuToggle: () => void;
-  menuOpen: boolean;
-}
+  interface HeaderProps {
+    onMenuClick: () => void;
+  }
 
-export function Header({ onMenuToggle, menuOpen }: HeaderProps) {
-  const { theme, setTheme } = useTheme();
+  export function Header({ onMenuClick }: HeaderProps) {
+    const { theme, toggleTheme } = useTheme();
 
-  return (
-    <header className="sticky top-0 z-40 h-14 border-b border-border bg-background/90 backdrop-blur-sm flex items-center px-4 gap-3">
-      <button
-        onClick={onMenuToggle}
-        className="lg:hidden p-1.5 rounded-md hover:bg-muted transition-colors"
-        aria-label="Toggle menu"
-      >
-        {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+    return (
+      <header className="sticky top-0 z-30 w-full glass-panel border-b border-border px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 -ml-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-      <div className="flex items-center gap-2 font-semibold text-foreground">
-        <Crosshair className="w-5 h-5 text-primary" />
-        <span className="hidden sm:inline">Cheat Engine</span>
-        <span className="text-muted-foreground font-normal hidden sm:inline">— Guia Completo</span>
-      </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-muted/50 border border-border rounded-lg text-sm text-muted-foreground w-64">
+            <span className="text-primary font-mono font-bold">CE</span>
+            <span>Cheat Engine — Guia Completo</span>
+          </div>
+        </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </button>
-      </div>
-    </header>
-  );
-}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Alternar tema"
+          >
+            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        </div>
+      </header>
+    );
+  }
+  
