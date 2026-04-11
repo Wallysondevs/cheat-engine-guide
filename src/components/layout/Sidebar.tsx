@@ -1,249 +1,177 @@
-import { useState } from "react";
-import { useHashLocation } from "wouter/use-hash-location";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import {
-  Crosshair, ChevronDown, ChevronRight,
-  Search, Database, Bug, Code2, Terminal, Shield, BookOpen, Zap, Cpu
-} from "lucide-react";
+import { Link, useLocation } from "wouter";
+  import { cn } from "@/lib/utils";
+  import {
+    BookOpen, HardDrive, LayoutDashboard, Database,
+    Search, Eye, Filter, ScanSearch,
+    List, Lock, Pencil,
+    Cpu, Target, Network, Layers,
+    Monitor, Code2, Bug, Sliders,
+    Wrench, Code, Package, FileCode,
+    Terminal, FileText, Keyboard, Zap,
+    Table2, Gauge, Gift,
+    Shield, EyeOff,
+    GraduationCap, ChevronRight, X, Crosshair
+  } from "lucide-react";
 
-interface NavItem {
-  label: string;
-  path: string;
-}
-interface NavSection {
-  label: string;
-  icon: React.ReactNode;
-  items: NavItem[];
-}
+  const NAVIGATION = [
+    {
+      title: "Fundamentos",
+      items: [
+        { path: "/", label: "Introdução", icon: BookOpen },
+        { path: "/instalacao", label: "Download e Instalação", icon: HardDrive },
+        { path: "/interface", label: "Interface Geral", icon: LayoutDashboard },
+        { path: "/tipos-dados", label: "Tipos de Dados", icon: Database },
+      ]
+    },
+    {
+      title: "Varredura de Memória",
+      items: [
+        { path: "/primeira-varredura", label: "Primeira Varredura", icon: Search },
+        { path: "/valor-desconhecido", label: "Valor Desconhecido", icon: Eye },
+        { path: "/tipos-varredura", label: "Tipos de Varredura", icon: ScanSearch },
+        { path: "/refinando", label: "Refinando Resultados", icon: Filter },
+      ]
+    },
+    {
+      title: "Gerenciamento de Endereços",
+      items: [
+        { path: "/lista-enderecos", label: "Lista de Endereços", icon: List },
+        { path: "/freeze", label: "Freeze de Valores", icon: Lock },
+        { path: "/modificar", label: "Modificar Valores", icon: Pencil },
+      ]
+    },
+    {
+      title: "Ponteiros",
+      items: [
+        { path: "/ponteiros", label: "O que são Ponteiros", icon: Cpu },
+        { path: "/encontrar-ponteiros", label: "Encontrar Ponteiros", icon: Target },
+        { path: "/pointer-scanner", label: "Pointer Scanner", icon: Network },
+        { path: "/multi-nivel", label: "Ponteiros Multinível", icon: Layers },
+      ]
+    },
+    {
+      title: "Debugger e Disassembler",
+      items: [
+        { path: "/memory-view", label: "Memory View", icon: Monitor },
+        { path: "/disassembler", label: "Disassembler", icon: Code2 },
+        { path: "/breakpoints", label: "Breakpoints", icon: Bug },
+        { path: "/registradores", label: "Registradores", icon: Sliders },
+      ]
+    },
+    {
+      title: "Assembly e Injeção",
+      items: [
+        { path: "/assembly", label: "Assembly x86/x64", icon: Wrench },
+        { path: "/auto-assemble", label: "Auto Assembler", icon: Code },
+        { path: "/injecao", label: "Injeção de Código", icon: Package },
+        { path: "/templates", label: "Templates de Código", icon: FileCode },
+      ]
+    },
+    {
+      title: "Lua e Scripts",
+      items: [
+        { path: "/lua", label: "Scripting com Lua", icon: Terminal },
+        { path: "/lua-api", label: "API Lua Completa", icon: FileText },
+        { path: "/scripts", label: "Scripts Avançados", icon: Zap },
+        { path: "/hotkeys", label: "Hotkeys", icon: Keyboard },
+      ]
+    },
+    {
+      title: "Recursos Avançados",
+      items: [
+        { path: "/tabelas", label: "Tabelas de Trapaças", icon: Table2 },
+        { path: "/speedhack", label: "SpeedHack", icon: Gauge },
+        { path: "/trainers", label: "Criando Trainers", icon: Gift },
+      ]
+    },
+    {
+      title: "Proteção e Segurança",
+      items: [
+        { path: "/anti-cheat", label: "Anti-Cheat", icon: Shield },
+        { path: "/evasao", label: "Técnicas de Evasão", icon: EyeOff },
+      ]
+    },
+    {
+      title: "Tutoriais",
+      items: [
+        { path: "/tutorial", label: "Tutorial Completo", icon: GraduationCap },
+      ]
+    },
+  ];
 
-const sections: NavSection[] = [
-  {
-    label: "Fundamentos",
-    icon: <BookOpen className="w-4 h-4" />,
-    items: [
-      { label: "Introdução", path: "/" },
-      { label: "Download e Instalação", path: "/instalacao" },
-      { label: "Interface Geral", path: "/interface" },
-      { label: "Tipos de Dados", path: "/tipos-dados" },
-    ],
-  },
-  {
-    label: "Varredura de Memória",
-    icon: <Search className="w-4 h-4" />,
-    items: [
-      { label: "Primeira Varredura", path: "/primeira-varredura" },
-      { label: "Valor Desconhecido", path: "/valor-desconhecido" },
-      { label: "Tipos de Varredura", path: "/tipos-varredura" },
-      { label: "Refinando Resultados", path: "/refinando" },
-    ],
-  },
-  {
-    label: "Gerenciamento de Endereços",
-    icon: <Database className="w-4 h-4" />,
-    items: [
-      { label: "Lista de Endereços", path: "/lista-enderecos" },
-      { label: "Freeze de Valores", path: "/freeze" },
-      { label: "Modificar Valores", path: "/modificar" },
-    ],
-  },
-  {
-    label: "Ponteiros",
-    icon: <Cpu className="w-4 h-4" />,
-    items: [
-      { label: "O que são Ponteiros", path: "/ponteiros" },
-      { label: "Encontrar Ponteiros", path: "/encontrar-ponteiros" },
-      { label: "Pointer Scanner", path: "/pointer-scanner" },
-      { label: "Ponteiros Multinível", path: "/multi-nivel" },
-    ],
-  },
-  {
-    label: "Debugger e Disassembler",
-    icon: <Bug className="w-4 h-4" />,
-    items: [
-      { label: "Memory View", path: "/memory-view" },
-      { label: "Disassembler", path: "/disassembler" },
-      { label: "Breakpoints", path: "/breakpoints" },
-      { label: "Registradores", path: "/registradores" },
-    ],
-  },
-  {
-    label: "Code Injection",
-    icon: <Code2 className="w-4 h-4" />,
-    items: [
-      { label: "Fundamentos de Assembly", path: "/assembly" },
-      { label: "Auto-Assemble", path: "/auto-assemble" },
-      { label: "Injeção de Código", path: "/injecao" },
-      { label: "Templates CE", path: "/templates" },
-    ],
-  },
-  {
-    label: "Lua Scripting",
-    icon: <Terminal className="w-4 h-4" />,
-    items: [
-      { label: "Introdução ao Lua", path: "/lua" },
-      { label: "API do Cheat Engine", path: "/lua-api" },
-      { label: "Scripts Automáticos", path: "/scripts" },
-      { label: "Hotkeys", path: "/hotkeys" },
-    ],
-  },
-  {
-    label: "Tabelas e Trainers",
-    icon: <Zap className="w-4 h-4" />,
-    items: [
-      { label: "Tabelas de Trapaça", path: "/tabelas" },
-      { label: "Speed Hack", path: "/speed-hack" },
-      { label: "Criar Trainers", path: "/trainers" },
-    ],
-  },
-  {
-    label: "Anti-Cheat e Proteções",
-    icon: <Shield className="w-4 h-4" />,
-    items: [
-      { label: "Proteções Anti-Cheat", path: "/anti-cheat" },
-      { label: "Técnicas de Evasão", path: "/evasao" },
-    ],
-  },
-  {
-    label: "Tutorial e Prática",
-    icon: <Crosshair className="w-4 h-4" />,
-    items: [
-      { label: "Tutorial Oficial (Passo a Passo)", path: "/tutorial" },
-    ],
-  },
-];
+  interface SidebarProps {
+    isOpen: boolean;
+    setIsOpen: (v: boolean) => void;
+  }
 
-interface SidebarSectionProps {
-  section: NavSection;
-  currentPath: string;
-  onNavigate: () => void;
-}
+  export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
+    const [location] = useLocation();
 
-function SidebarSection({ section, currentPath, onNavigate }: SidebarSectionProps) {
-  const isActive = section.items.some(item => item.path === currentPath);
-  const [open, setOpen] = useState(isActive);
-
-  return (
-    <div className="mb-0.5">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wide transition-colors",
-          isActive
-            ? "text-primary bg-accent/50"
-            : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-        )}
-      >
-        <span className={cn(isActive ? "text-primary" : "text-muted-foreground/70")}>
-          {section.icon}
-        </span>
-        <span className="flex-1 text-left">{section.label}</span>
-        {open
-          ? <ChevronDown className="w-3 h-3 shrink-0" />
-          : <ChevronRight className="w-3 h-3 shrink-0" />}
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            <div className="ml-2 pl-3 border-l-2 border-border/60 mt-0.5 mb-1 space-y-0.5">
-              {section.items.map(item => (
-                <a
-                  key={item.path}
-                  href={`#${item.path}`}
-                  onClick={onNavigate}
-                  className={cn(
-                    "block px-2 py-1 rounded-md text-sm transition-colors leading-tight",
-                    currentPath === item.path
-                      ? "text-primary font-medium bg-accent"
-                      : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-                  )}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-interface SidebarProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-export function Sidebar({ open, onClose }: SidebarProps) {
-  const [path] = useHashLocation();
-
-  const SidebarContent = () => (
-    <div className="h-full flex flex-col">
-      <div className="px-4 py-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Crosshair className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <div className="font-bold text-sm text-sidebar-foreground">Cheat Engine</div>
-            <div className="text-xs text-muted-foreground">Guia em Português</div>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        {sections.map(section => (
-          <SidebarSection
-            key={section.label}
-            section={section}
-            currentPath={path}
-            onNavigate={onClose}
+    return (
+      <>
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setIsOpen(false)}
           />
-        ))}
-      </div>
-      <div className="px-4 py-3 border-t border-sidebar-border">
-        <p className="text-xs text-muted-foreground text-center">
-          31 tópicos • Português Brasileiro
-        </p>
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-sidebar border-r border-sidebar-border h-screen sticky top-0">
-        <SidebarContent />
-      </aside>
-
-      {/* Mobile overlay */}
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-              onClick={onClose}
-            />
-            <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed left-0 top-0 z-50 w-64 h-full bg-sidebar border-r border-sidebar-border lg:hidden"
-            >
-              <SidebarContent />
-            </motion.aside>
-          </>
         )}
-      </AnimatePresence>
-    </>
-  );
-}
+
+        <aside className={cn(
+          "fixed top-0 bottom-0 left-0 z-50 w-72 bg-card border-r border-border transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className="p-6">
+            <div className="flex items-center justify-between lg:justify-center mb-8">
+              <Link href="/" className="flex items-center gap-3 group">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Crosshair className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold mt-0 mb-0 pb-0 border-0 leading-tight">Cheat Engine</h2>
+                  <p className="text-xs text-muted-foreground">Guia Completo</p>
+                </div>
+              </Link>
+              <button className="lg:hidden p-2 text-muted-foreground hover:text-foreground" onClick={() => setIsOpen(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <nav className="space-y-8">
+              {NAVIGATION.map((section, idx) => (
+                <div key={idx}>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3 mt-0 border-0 pb-0">
+                    {section.title}
+                  </h4>
+                  <ul className="space-y-1 list-none">
+                    {section.items.map((item, i) => {
+                      const isActive = location === item.path;
+                      const Icon = item.icon;
+                      return (
+                        <li key={i}>
+                          <Link
+                            href={item.path}
+                            onClick={() => setIsOpen(false)}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                              isActive
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            <Icon className={cn("w-4 h-4", isActive ? "text-primary" : "opacity-70")} />
+                            {item.label}
+                            {isActive && <ChevronRight className="w-3 h-3 ml-auto text-primary" />}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+          </div>
+        </aside>
+      </>
+    );
+  }
+  
