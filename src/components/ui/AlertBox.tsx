@@ -38,7 +38,8 @@ const config: Record<AlertType, { icon: React.ReactNode; classes: string; titleC
 };
 
 export function AlertBox({ type = "info", title, children }: AlertBoxProps) {
-  const c = config[type];
+  const c = config[type] || config.info; // Fallback para info se type for inválido
+
   return (
     <div className={cn("flex gap-3 border rounded-lg p-4 mb-5 not-prose text-sm", c.classes)}>
       {c.icon}
