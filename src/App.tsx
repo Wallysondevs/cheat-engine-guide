@@ -60,7 +60,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className="flex-1 lg:pl-72 flex flex-col min-w-0 transition-all duration-300">
         <Header onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 pb-16">{children}</main>
+        <main className="flex-1 pb-16 min-h-screen">{children}</main>
       </div>
       <LessonNav />
     </div>

@@ -28,7 +28,7 @@ export function PageContainer({ title, subtitle, difficulty, timeToRead, childre
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 pb-32">
+    <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 pb-32 min-h-[60vh]">
       {/* Progress Bar */}
       <div
         className="fixed top-0 left-0 h-1 bg-gradient-to-r from-orange-500 to-red-500 z-50 transition-all duration-150"
