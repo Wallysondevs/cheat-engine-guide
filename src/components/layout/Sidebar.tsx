@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
 import { cn } from "@/lib/utils";
 import { Crosshair, X, ChevronDown, ChevronRight, Check, BookOpen } from "lucide-react";
 import { COURSE_MODULES, getProgress, getCompletionStats, type Module } from "@/lib/course";
 
 function ModuleSection({ module }: { module: Module }) {
-  const [location] = useLocation();
+  const [location] = useHashLocation();
   const [open, setOpen] = useState(() => {
     return module.lessons.some((l) => l.path === location);
   });

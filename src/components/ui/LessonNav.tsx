@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useHashLocation } from "wouter/use-hash-location";
 import {
   getNavigation,
   isLessonComplete,
@@ -12,7 +12,7 @@ import {
 } from "@/lib/course";
 
 export function LessonNav() {
-  const [location] = useLocation();
+  const [location] = useHashLocation();
   const [complete, setComplete] = useState(false);
   const [nav, setNav] = useState<{ prev: Lesson | null; next: Lesson | null }>({
     prev: null,
@@ -20,11 +20,16 @@ export function LessonNav() {
   });
 
   useEffect(() => {
-    const lesson = findLessonByPath(location);
-    if (lesson) {
-      setComplete(isLessonComplete(lesson.id));
-      setNav(getNavigation(lesson.id));
-    } else {
+    try {
+      const lesson = findLessonByPath(location);
+      if (lesson) {
+        setComplete(isLessonComplete(lesson.id));
+        setNav(getNavigation(lesson.id));
+      } else {
+        setComplete(false);
+        setNav({ prev: null, next: null });
+      }
+    } catch {
       setComplete(false);
       setNav({ prev: null, next: null });
     }
@@ -48,7 +53,6 @@ export function LessonNav() {
   return (
     <div className="fixed bottom-0 left-0 right-0 lg:left-72 bg-background/95 backdrop-blur-sm border-t border-border z-40">
       <div className="container max-w-4xl px-4 py-3 flex items-center justify-between gap-4">
-        {/* Previous */}
         <div className="flex-1">
           {nav.prev && (
             <Button
@@ -62,7 +66,6 @@ export function LessonNav() {
           )}
         </div>
 
-        {/* Mark Complete */}
         <Button
           variant={complete ? "default" : "outline"}
           size="sm"
@@ -77,7 +80,6 @@ export function LessonNav() {
           {complete ? "Concluído" : "Marcar concluído"}
         </Button>
 
-        {/* Next */}
         <div className="flex-1">
           {nav.next && (
             <Button
