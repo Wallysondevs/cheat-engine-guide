@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { LessonNav } from "@/components/ui/LessonNav";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import Home from "@/pages/Home";
 import Introducao from "@/pages/Introducao";
@@ -69,7 +70,8 @@ function Layout({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Layout>
-      <Switch>
+      <ErrorBoundary>
+        <Switch>
         <Route path="/" component={Home} />
         <Route path="/instalacao" component={Instalacao} />
         <Route path="/interface" component={Interface} />
@@ -104,7 +106,8 @@ function Router() {
         <Route path="/evasao" component={Evasao} />
         <Route path="/tutorial" component={Tutorial} />
         <Route component={NotFound} />
-      </Switch>
+        </Switch>
+      </ErrorBoundary>
     </Layout>
   );
 }

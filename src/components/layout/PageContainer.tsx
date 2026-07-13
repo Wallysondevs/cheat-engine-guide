@@ -13,6 +13,9 @@ interface PageContainerProps {
 export function PageContainer({ title, subtitle, difficulty, timeToRead, children }: PageContainerProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
 
+  // Debug log
+  console.log("PageContainer rendering:", title);
+
   useEffect(() => {
     const handleScroll = () => {
       const totalScroll = document.documentElement.scrollTop;
